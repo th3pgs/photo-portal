@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Asset Portal</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- HUGE TIMER -->
+  <header class="timer-container">
+    <p class="timer-title">PROJECT DEADLINE</p>
+    <div id="countdown" class="timer-text">--:--:--</div>
+    <p id="timerStatus" class="timer-subtitle">Loading timer...</p>
+  </header>
+
+  <!-- LEADERBOARD / SUBMISSIONS -->
+  <section class="leaderboard-section">
+    <h2>Live Submissions</h2>
+    <div class="roster-list" id="rosterList">
+      <!-- Names will appear here -->
+    </div>
+  </section>
+
+  <!-- PREVIEW IMAGES -->
+  <section class="preview-section" id="previewContainer">
+    <h2>Style References</h2>
+    <div class="preview-grid">
+      <img id="ref1" src="" alt="Reference 1" style="display:none;">
+      <img id="ref2" src="" alt="Reference 2" style="display:none;">
+    </div>
+  </section>
+
+  <!-- INSTRUCTIONAL VIDEO -->
+  <section class="video-section" id="videoContainer" style="display:none;">
+    <h2>Instructions</h2>
+    <div class="iframe-wrapper">
+      <iframe id="videoIframe" src="" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </section>
+
+  <!-- UPLOAD FORM -->
+  <section class="form-section">
+    <div class="card" id="formCard">
+      <h2 id="formTitle">Upload Your Photo</h2>
+      <p id="editNotice" style="display:none; color: #10b981; font-weight: bold; margin-bottom: 10px;">
+        Welcome back! Submitting will overwrite your previous photo.
+      </p>
+      <form id="uploadForm">
+        <div class="input-group">
+          <input type="text" id="firstName" placeholder="First Name" required>
+          <input type="text" id="lastName" placeholder="Last Name" required>
+        </div>
+        <input type="text" id="role" placeholder="Your Position / Role" required style="width: 100%; margin-top: 10px;">
+        
+        <div class="file-upload">
+          <input type="file" id="fileInput" accept="image/*" required>
+        </div>
+
+        <div id="progressContainer" style="display:none; margin-top: 15px;">
+          <div style="background: #e5e7eb; border-radius: 10px; height: 20px; width: 100%;">
+            <div id="progressBar" style="background: #111827; height: 100%; width: 0%; border-radius: 10px; color: white; text-align: center; font-size: 12px; line-height: 20px;">0%</div>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" style="margin-top: 15px;">Send / Upload</button>
+      </form>
+    </div>
+
+    <!-- SUCCESS SCREEN -->
+    <div class="card" id="successCard" style="display:none; text-align: center;">
+      <h2 style="color: #10b981;">✔ Photo Uploaded</h2>
+      <p>Thank you for your contribution. The edit will be done soon.</p>
+      <button id="resetBtn" style="margin-top: 15px;">Edit / Upload Again</button>
+    </div>
+  </section>
+
+  <!-- SECRET ADMIN TRIGGER (TRIPLE TAP HERE) -->
+  <footer id="secretTrigger" style="height: 150px; background: white; cursor: default;"></footer>
+
+  <!-- ADMIN PANEL (HIDDEN) -->
+  <div id="adminPanel" style="display:none; position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); padding: 20px; overflow-y: auto; z-index: 100;">
+    <h2>Editor Dashboard</h2>
+    
+    <label>Target Deadline</label>
+    <input type="datetime-local" id="adminTimer">
+    <button id="saveTimerBtn">Save Timer</button>
+    
+    <hr style="margin: 20px 0;">
+    
+    <label>YouTube Embed Link (Video)</label>
+    <input type="url" id="adminVideo" placeholder="https://www.youtube.com/embed/...">
+    <button id="saveVideoBtn">Save Video</button>
+    
+    <hr style="margin: 20px 0;">
+    
+    <label>Preview Image 1 URL</label>
+    <input type="url" id="adminImg1">
+    <label>Preview Image 2 URL</label>
+    <input type="url" id="adminImg2">
+    <button id="saveImagesBtn">Save Images</button>
+    
+    <hr style="margin: 20px 0;">
+    
+    <h3>Add Starting User (Ticks)</h3>
+    <input type="text" id="seedFirst" placeholder="First Name">
+    <input type="text" id="seedLast" placeholder="Last Name">
+    <input type="text" id="seedRole" placeholder="Role">
+    <button id="seedBtn">Add to Leaderboard</button>
+    
+    <button id="closeAdminBtn" style="margin-top: 40px; background: #ef4444;">Close Dashboard</button>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

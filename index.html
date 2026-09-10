@@ -7,12 +7,12 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- ENTRY GATE -->
+  <!-- PROPERLY BLURRED ENTRY GATE -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
       <h2>Welcome to the media uploader</h2>
@@ -29,22 +29,20 @@
 
   <main class="main-wrapper" id="mainApp">
     
-    <!-- ARTISTIC AURORA TIMER -->
+    <!-- APPLE STYLE RIPPLE TIMER -->
     <header class="hero-timer">
-      <h3 class="timer-title">REMAINING WINDOW</h3>
-      <div class="artistic-clock">
-        <div class="aura-blob"></div>
-        <div class="clock-values">
-          <div class="time-block"><span id="t-hours">00</span><label>hrs</label></div>
-          <span class="colon">:</span>
-          <div class="time-block"><span id="t-minutes">00</span><label>min</label></div>
-          <span class="colon">:</span>
-          <div class="time-block"><span id="t-seconds">00</span><label>sec</label></div>
+      <h3 class="timer-title">UPLOAD BEFORE</h3>
+      <div class="apple-timer-wrapper">
+        <div class="ripple-node"></div>
+        <div class="apple-clock">
+          <span id="t-hours">00</span><span class="sep">:</span><span id="t-minutes">00</span><span class="sep">:</span><span id="t-seconds">00</span>
         </div>
+        <div class="ripple-node"></div>
       </div>
+      <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
-    <!-- INFINITE LOOP CAROUSEL -->
+    <!-- STANDARD SLIDING CAROUSEL -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
@@ -53,19 +51,24 @@
         </div>
       </div>
       
-      <div class="carousel-wrapper" id="carouselWrapper">
-        <div class="carousel-track" id="carouselTrack">
-          <!-- Images injected & cloned via JS for infinite loop -->
+      <div class="carousel-container">
+        <button class="car-btn" id="carPrev">❮</button>
+        <div class="carousel-viewport">
+          <div class="carousel-track" id="carouselTrack">
+            <div class="car-slide-wrapper hidden-slide" id="ref1Wrap"><img id="ref1" src="" alt="Reference 1" class="car-slide" /></div>
+            <div class="car-slide-wrapper hidden-slide" id="ref2Wrap"><img id="ref2" src="" alt="Reference 2" class="car-slide" /></div>
+          </div>
         </div>
+        <button class="car-btn" id="carNext">❯</button>
       </div>
+      <div class="carousel-dots" id="carouselDots"></div>
     </section>
 
-    <!-- VIDEO PLAYER WITH LOADING STATE -->
+    <!-- VIDEO PLAYER -->
     <section class="section-container" id="videoSection" style="display: none;">
       <div class="video-container glass-card">
-        <div id="videoLoader" class="video-loader"><div class="spinner"></div></div>
         <video id="instructionVideo" playsinline preload="auto">
-          <source id="videoSource" src="">
+          <source id="videoSource" src="" type="video/mp4">
         </video>
         <div class="custom-controls">
           <div class="timeline-container"><input type="range" id="seekSlider" class="range-slider" value="0" min="0" max="100" step="0.1"></div>
@@ -81,11 +84,11 @@
       </div>
     </section>
 
-    <!-- UPLOAD FLOW (WITH BLOCKING PROGRESS) -->
+    <!-- UPLOAD FLOW -->
     <section class="section-container">
       <div class="glass-card form-box relative-box" id="formCard">
         
-        <!-- BLOCKING UPLOAD OVERLAY -->
+        <!-- BLOCKING USER UPLOAD OVERLAY -->
         <div id="uploadOverlay" class="upload-overlay hidden">
           <div class="upload-status-box">
             <div class="spinner-large"></div>
@@ -142,13 +145,13 @@
 
       <div class="glass-card success-box hidden" id="successCard">
         <div class="success-glyph">✔</div>
-        <h2>Upload Finished</h2>
-        <p>Your file has been secured and uploaded properly.</p>
-        <button id="resetBtn" class="btn-secondary" style="margin-top: 20px;">Upload Another / Fix Mistake</button>
+        <h2>Media Uploaded</h2>
+        <p>Your file has been secured.</p>
+        <button id="resetBtn" class="btn-secondary" style="margin-top:20px;">Upload Another / Fix Mistake</button>
       </div>
     </section>
 
-    <!-- UNIFIED LEADERBOARD -->
+    <!-- LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
         <h3>Upload Leaderboard</h3>
@@ -156,9 +159,11 @@
       </div>
       
       <div class="chess-board">
-        <div id="rosterList">
-          <!-- All uploads map here dynamically -->
-        </div>
+        <div class="leaderboard-group-title">ALREADY UPLOADED</div>
+        <div id="organizerList"></div>
+        <div class="chess-divider"></div>
+        <div class="leaderboard-group-title" style="margin-top:10px;">RECENT UPLOADS</div>
+        <div id="rosterList"></div>
       </div>
     </section>
     
@@ -167,6 +172,17 @@
 
   <!-- ADMIN DASHBOARD -->
   <div id="adminPanel" class="admin-fullscreen hidden">
+    
+    <!-- BLOCKING ADMIN UPLOAD OVERLAY -->
+    <div id="adminUploadOverlay" class="upload-overlay hidden" style="z-index: 1000000;">
+      <div class="upload-status-box">
+        <div class="spinner-large"></div>
+        <h3 id="adminOverlayText">Uploading Media...</h3>
+        <div class="progress-bar-bg"><div id="adminProgressBar" class="progress-bar-fill"></div></div>
+        <p id="adminProgressPercent" style="font-weight: bold; margin-top: 5px;">0%</p>
+      </div>
+    </div>
+
     <div class="admin-sidebar">
       <h2>Editor Dashboard</h2>
       <button id="tabSettings" class="admin-tab active">System Configuration</button>
@@ -180,6 +196,7 @@
           <h3>System Configuration</h3>
           <p>Manage the timer, instructional video, and styling assets.</p>
         </div>
+
         <div class="admin-card">
           <h4>Global Deadline Timer</h4>
           <div class="admin-row">
@@ -187,6 +204,7 @@
             <button id="saveTimerBtn" class="btn-admin-action">Update Timer</button>
           </div>
         </div>
+
         <div class="admin-card">
           <h4>Instructional Video</h4>
           <div class="admin-row">
@@ -195,6 +213,7 @@
             <button id="removeVideoBtn" class="btn-admin-danger">Remove</button>
           </div>
         </div>
+
         <div class="admin-card">
           <h4>Preview Asset 1</h4>
           <div class="admin-row">
@@ -210,13 +229,14 @@
             <button id="removeImgBtn2" class="btn-admin-danger">Remove</button>
           </div>
         </div>
+
         <div class="admin-card highlight-card">
-          <h4>Add Manual User (No Photo)</h4>
+          <h4>Add "Already Uploaded" User</h4>
           <div class="input-grid">
-            <input type="text" id="seedFirst" placeholder="First Name" />
-            <input type="text" id="seedLast" placeholder="Last Name" />
+            <input type="text" id="seedFirst" placeholder="First Name (e.g. Elon)" />
+            <input type="text" id="seedLast" placeholder="Last Name (e.g. Musk)" />
           </div>
-          <input type="text" id="seedRole" placeholder="Role" style="margin-top: 8px; width: 100%;" />
+          <input type="text" id="seedRole" placeholder="Role (e.g. Video Editor)" style="margin-top: 8px; width: 100%;" />
           <button id="seedBtn" class="btn-admin-action green-btn" style="margin-top: 10px; width: 100%;">Add to Leaderboard</button>
         </div>
       </div>

@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Portal — Asset Drop</title>
+  <title>Meet The Team - Uploads</title>
+  
+  <!-- Uploader Icon for Browser Tab -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -11,196 +15,190 @@
 </head>
 <body>
 
-  <!-- WELCOME ENTRY MODAL (Unlocks Audio & Focuses User) -->
+  <!-- WELCOME OVERLAY -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
-      <div class="entry-badge">PORTAL PROTOCOL</div>
-      <h2>High-Resolution Asset Vault</h2>
-      <p>Submit assets in maximum resolution. Ensure spelling and operational roles are verified prior to transmission.</p>
-      <button id="enterSiteBtn" class="btn-glow">ENTER PORTAL</button>
+      <h2>Welcome!</h2>
+      <div class="steps-list">
+        <p><b>1.</b> Follow the steps in the video below to get a high-resolution, professional picture.</p>
+        <p><b>2.</b> Enter your correct information.</p>
+        <p><b>3.</b> Press upload before the deadline.</p>
+      </div>
+      <button id="enterSiteBtn" class="btn-glow">Go In</button>
     </div>
   </div>
 
-  <!-- IN-APP TOAST CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- MAIN VIEWPORT -->
   <main class="main-wrapper">
-
-    <!-- DIGITAL COUNTDOWN HERO -->
+    <!-- DIGITAL CLOCK (Red on White) -->
     <header class="hero-timer">
-      <span class="timer-badge"><span class="pulse-dot"></span> LIVE DEADLINE</span>
-      <div class="digital-clock-frame">
-        <div id="countdown" class="digital-clock">00:00:00</div>
-      </div>
-      <p id="timerStatus" class="timer-sub">Synchronizing mission clock...</p>
+      <div id="countdown" class="digital-clock">00:00:00</div>
+      <p id="timerStatus" class="timer-sub">Loading timer...</p>
     </header>
 
-    <!-- STYLE REFERENCES -->
+    <!-- PREVIEWS -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
-        <h3>VISUAL REFERENCES</h3>
-        <p>Target aesthetic & lighting grading</p>
+        <h3>How it's going to look like</h3>
+        <p class="red-alert"><b>Note:</b> This is how your picture is going to look like. So make sure you pick a picture that perfectly complements this style.</p>
       </div>
       <div class="preview-grid">
-        <div class="preview-tile glass-card">
-          <img id="ref1" src="" alt="Reference 1" />
-        </div>
-        <div class="preview-tile glass-card">
-          <img id="ref2" src="" alt="Reference 2" />
-        </div>
+        <div class="preview-tile"><img id="ref1" src="" alt="Reference 1" /></div>
+        <div class="preview-tile"><img id="ref2" src="" alt="Reference 2" /></div>
       </div>
     </section>
 
-    <!-- INSTRUCTIONAL VIDEO (AUTOPLAY ON SCROLL) -->
+    <!-- CUSTOM VIDEO PLAYER -->
     <section class="section-container" id="videoSection" style="display: none;">
-      <div class="section-heading">
-        <h3>BRIEFING RECORDING</h3>
-        <p>Workflow specifications and asset treatment</p>
-      </div>
-      <div class="video-frame glass-card">
-        <video id="instructionVideo" playsinline preload="auto" controls>
+      <div class="video-container glass-card" id="videoContainer">
+        <video id="instructionVideo" playsinline preload="auto">
           <source id="videoSource" src="" type="video/mp4">
-          Your browser does not support high-definition video playback.
         </video>
+        
+        <!-- Hover Controls -->
+        <div class="custom-controls" id="videoControls">
+          <div class="timeline-container">
+            <input type="range" id="seekSlider" class="range-slider" value="0" min="0" max="100" step="0.1">
+          </div>
+          <div class="control-buttons">
+            <button id="btnBack5" class="vid-btn">⏪ -5s</button>
+            <button id="btnPlayPause" class="vid-btn">⏸ Pause</button>
+            <button id="btnFwd5" class="vid-btn">+5s ⏩</button>
+            
+            <div class="volume-container">
+              <span style="font-size: 12px; font-weight: bold;">🔊</span>
+              <input type="range" id="volumeSlider" class="range-slider vol-slider" value="1" min="0" max="1" step="0.05">
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- SUBMISSION / EDIT FORM -->
+    <!-- UPLOAD FORM -->
     <section class="section-container">
-      <div class="section-heading">
-        <h3>SUBMIT ASSET</h3>
-        <p>Uncompressed source transfer</p>
-      </div>
-
       <div class="glass-card form-box" id="formCard">
         <div id="editNotice" class="edit-badge hidden">
-          <span>●</span> Recognized session: Submission will overwrite prior record
+          Welcome back! Uploading again will update your picture.
         </div>
 
         <form id="uploadForm">
           <div class="input-grid">
             <div class="field-item">
-              <label>FIRST NAME</label>
-              <input type="text" id="firstName" placeholder="Jane" required autocomplete="off" />
+              <label>First Name</label>
+              <input type="text" id="firstName" placeholder="First Name" required autocomplete="off" />
             </div>
             <div class="field-item">
-              <label>LAST NAME</label>
-              <input type="text" id="lastName" placeholder="Doe" required autocomplete="off" />
+              <label>Last Name</label>
+              <input type="text" id="lastName" placeholder="Last Name" required autocomplete="off" />
             </div>
           </div>
 
           <div class="field-item">
-            <label>ASSIGNED ROLE</label>
-            <input type="text" id="role" placeholder="e.g. Lead Motion, Scene 02" required autocomplete="off" />
+            <label>Project Role</label>
+            <input type="text" id="role" placeholder="e.g. Graphic Designer and Video Editor" required autocomplete="off" />
           </div>
 
           <div class="file-dropzone" id="dropZone">
             <input type="file" id="fileInput" accept="image/*" required />
             <div class="dropzone-content">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              <span id="fileNameDisplay">Select Full-Res Source Photo</span>
-              <small>Retains original capture bitrate & pixels</small>
+              <span id="fileNameDisplay" style="font-size: 1.5rem;">📁 Choose Picture</span>
+              <small>Upload highest quality possible</small>
             </div>
           </div>
 
-          <!-- UPLOAD TELEMETRY -->
+          <!-- PROGRESS BAR -->
           <div id="progressContainer" class="progress-wrap hidden">
-            <div class="progress-info">
-              <span id="progressText">Uploading...</span>
-              <span id="progressPercent">0%</span>
-            </div>
-            <div class="progress-bar-bg">
-              <div id="progressBar" class="progress-bar-fill"></div>
-            </div>
+            <div class="progress-info"><span id="progressText">Uploading...</span><span id="progressPercent">0%</span></div>
+            <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn-glow">SUBMIT ASSET</button>
+          <button type="submit" id="submitBtn" class="btn-glow">Upload</button>
         </form>
       </div>
 
-      <!-- SUCCESS STATE -->
       <div class="glass-card success-box hidden" id="successCard">
         <div class="success-glyph">✔</div>
-        <h2>Transmission Received</h2>
-        <p>Your contribution has been archived. Production edit sequence is in progress.</p>
-        <button id="resetBtn" class="btn-secondary">Update / Re-upload</button>
+        <h2>Uploaded Successfully!</h2>
+        <p>Thanks! We have your picture for the edit.</p>
+        <button id="resetBtn" class="btn-secondary">Fix a mistake / Upload again</button>
       </div>
     </section>
 
-    <!-- LIVE LEADERBOARD -->
+    <!-- LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
-        <div>
-          <h3>SUBMISSION ROSTER</h3>
-          <p>Verified deliveries</p>
-        </div>
-        <span id="rosterCounter" class="counter-badge">0 Submissions</span>
+        <h3>Upload Leaderboard</h3>
+        <span id="rosterCounter" class="counter-badge">0 Uploads</span>
       </div>
-      <div class="roster-wrapper" id="rosterList">
-        <!-- Live data items -->
-      </div>
+      
+      <!-- Organizers (No Numbers) -->
+      <div class="roster-wrapper" id="organizerList" style="margin-bottom: 15px;"></div>
+      
+      <hr style="border: 0; border-top: 1px dashed #d1d5db; margin: 15px 0;">
+      
+      <!-- Regular Users (Numbered) -->
+      <div class="roster-wrapper" id="rosterList"></div>
     </section>
 
-    <!-- SECRET TRIGGER FOOTER (TRIPLE TAP) -->
+    <!-- ADMIN TRIGGER -->
     <footer id="secretTrigger" class="secret-pad"></footer>
   </main>
 
-  <!-- ADMIN CONTROL CENTER -->
+  <!-- MODERN ADMIN DASHBOARD -->
   <div id="adminPanel" class="admin-panel hidden">
-    <div class="admin-backdrop" id="adminBackdrop"></div>
-    <div class="admin-drawer glass-card">
-      <div class="admin-header">
-        <div>
-          <span class="admin-pill">DIRECTORATE</span>
-          <h2>Flight Control</h2>
-        </div>
-        <button id="closeAdminBtn" class="btn-close">&times;</button>
-      </div>
-
-      <div class="admin-scroller">
-        <!-- DEADLINE CONFIG -->
+    <div class="admin-sidebar">
+      <h2>Editor Dashboard</h2>
+      <button id="tabSettings" class="admin-tab active">General Settings</button>
+      <button id="tabGallery" class="admin-tab">View Uploads</button>
+      
+      <button id="closeAdminBtn" class="btn-close-admin">Close Dashboard</button>
+    </div>
+    
+    <div class="admin-content">
+      
+      <!-- Settings Tab -->
+      <div id="viewSettings">
         <div class="admin-block">
-          <label>COUNTDOWN TARGET DEADLINE</label>
+          <label>Set Deadline Timer</label>
           <input type="datetime-local" id="adminTimer" />
-          <button id="saveTimerBtn" class="btn-admin-action">Lock New Time</button>
+          <button id="saveTimerBtn" class="btn-admin-action">Update Timer</button>
         </div>
 
-        <!-- VIDEO FILE UPLOAD -->
         <div class="admin-block">
-          <label>INSTRUCTIONAL BRIEFING VIDEO</label>
+          <label>Upload Video</label>
           <input type="file" id="adminVideoFile" accept="video/*" />
-          <button id="uploadVideoBtn" class="btn-admin-action">Upload & Deploy Video</button>
-          <small id="videoUploadStatus" class="status-tip"></small>
+          <button id="uploadVideoBtn" class="btn-admin-action">Save Video</button>
         </div>
 
-        <!-- PREVIEW ASSET UPLOADS -->
         <div class="admin-block">
-          <label>STYLE REFERENCE ASSET 1</label>
+          <label>Upload Preview Pictures</label>
           <input type="file" id="adminImgFile1" accept="image/*" />
-          <button id="uploadImgBtn1" class="btn-admin-action">Upload Reference 1</button>
-          
-          <label style="margin-top: 15px;">STYLE REFERENCE ASSET 2</label>
-          <input type="file" id="adminImgFile2" accept="image/*" />
-          <button id="uploadImgBtn2" class="btn-admin-action">Upload Reference 2</button>
-          <small id="imgUploadStatus" class="status-tip"></small>
+          <button id="uploadImgBtn1" class="btn-admin-action">Save Picture 1</button>
+          <input type="file" id="adminImgFile2" accept="image/*" style="margin-top: 10px;" />
+          <button id="uploadImgBtn2" class="btn-admin-action">Save Picture 2</button>
         </div>
 
-        <!-- SEED CONTRIBUTORS -->
-        <div class="admin-block">
-          <label>MANUAL ROSTER INJECTION</label>
+        <div class="admin-block" style="background: #f0fdf4; padding: 15px; border-radius: 12px; border: 1px solid #bbf7d0;">
+          <label>Add Organizer / Completed Users (Sits at top without numbers)</label>
           <div class="input-grid">
             <input type="text" id="seedFirst" placeholder="First Name" />
             <input type="text" id="seedLast" placeholder="Last Name" />
           </div>
-          <input type="text" id="seedRole" placeholder="Operational Role" style="margin-top: 8px;" />
-          <button id="seedBtn" class="btn-admin-action">Inject Record</button>
+          <input type="text" id="seedRole" placeholder="Role" style="margin-top: 8px;" />
+          <button id="seedBtn" class="btn-admin-action" style="background: #22c55e; color: white;">Add Completed User</button>
         </div>
       </div>
+
+      <!-- Gallery / Uploads Tab -->
+      <div id="viewGallery" class="hidden">
+        <h3>All Uploaded Pictures</h3>
+        <p style="color: gray; margin-bottom: 20px;">Only you can see this page.</p>
+        <div class="gallery-grid" id="adminGallery">
+          <!-- Images load here -->
+        </div>
+      </div>
+      
     </div>
   </div>
 

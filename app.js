@@ -24,7 +24,6 @@ let deadlineDate = null;
 let timerInterval = null;
 let cachedAdmin = false;
 
-// Admin caching
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
 function showToast(msg) {
@@ -42,17 +41,8 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   if (video.src) { video.volume = 1; video.play().catch(()=>{}); }
 });
 
-// Carousel Auto-Scroll Logic
+// Carousel Manual Nav
 const track = document.getElementById("carouselTrack");
-let carouselDir = 1;
-setInterval(() => {
-  if (!track || track.scrollWidth <= track.clientWidth) return;
-  const max = track.scrollWidth - track.clientWidth;
-  if (track.scrollLeft >= max - 5) carouselDir = -1;
-  if (track.scrollLeft <= 5) carouselDir = 1;
-  track.scrollBy({ left: carouselDir * track.clientWidth, behavior: 'smooth' });
-}, 4000);
-
 document.getElementById("carPrev").addEventListener("click", () => track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' }));
 document.getElementById("carNext").addEventListener("click", () => track.scrollBy({ left: track.clientWidth, behavior: 'smooth' }));
 
@@ -76,8 +66,8 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
     if (d.deadline) { deadlineDate = new Date(d.deadline); startDigitalCountdown(); }
     if (d.preview1 || d.preview2) {
       document.getElementById("previewSection").style.display = "block";
-      if (d.preview1) { document.getElementById("ref1").src = d.preview1; document.getElementById("ref1").style.display = "block"; }
-      if (d.preview2) { document.getElementById("ref2").src = d.preview2; document.getElementById("ref2").style.display = "block"; }
+      if (d.preview1) { document.getElementById("ref1").src = d.preview1; document.getElementById("ref1Wrap").style.display = "flex"; }
+      if (d.preview2) { document.getElementById("ref2").src = d.preview2; document.getElementById("ref2Wrap").style.display = "flex"; }
     }
     if (d.videoUrl) {
       document.getElementById("videoSection").style.display = "block";
@@ -102,11 +92,10 @@ function startDigitalCountdown() {
   }, 1000);
 }
 
-// User Submission Logic
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
-// Chess.com Leaderboard Sync
+// Leaderboard Sync & FULL Admin Gallery
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -135,24 +124,26 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     
     d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
 
-    if (d.imageUrl) {
-      gallery.innerHTML += `
-        <div class="gallery-card" id="gal-${id}">
-          <img src="${d.imageUrl}">
-          <div class="gallery-info">
-            <h4>${d.firstName} ${d.lastName}</h4><p>${d.role}</p>
-            <div style="display:flex; gap:5px; margin-bottom: 10px;">
-              <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}')">Copy</button>
-              <button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}')">Save</button>
-            </div>
-            <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
-            <div class="del-req-box hidden" id="delbox-${id}">
-              <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
-              <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
-            </div>
+    // Render ALL Entries in Admin (Image or No Image)
+    const imgHtml = d.imageUrl ? `<img src="${d.imageUrl}">` : `<div class="no-img-placeholder">Manual Entry (No Photo)</div>`;
+    const saveBtn = d.imageUrl ? `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}')">Save</button>` : '';
+
+    gallery.innerHTML += `
+      <div class="gallery-card" id="gal-${id}">
+        ${imgHtml}
+        <div class="gallery-info">
+          <h4>${d.firstName} ${d.lastName}</h4><p>${d.role}</p>
+          <div style="display:flex; gap:5px; margin-bottom: 10px;">
+            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}')">Copy</button>
+            ${saveBtn}
           </div>
-        </div>`;
-    }
+          <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
+          <div class="del-req-box hidden" id="delbox-${id}">
+            <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
+            <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
+          </div>
+        </div>
+      </div>`;
   });
 });
 
@@ -235,7 +226,6 @@ document.getElementById("secretTrigger").addEventListener("click", () => {
 });
 document.getElementById("closeAdminBtn").addEventListener("click", () => document.getElementById("adminPanel").classList.add("hidden"));
 
-// Admin Tabs & Actions
 document.getElementById("tabSettings").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabGallery").classList.remove("active"); document.getElementById("viewSettings").classList.remove("hidden"); document.getElementById("viewGallery").classList.add("hidden"); });
 document.getElementById("tabGallery").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabSettings").classList.remove("active"); document.getElementById("viewGallery").classList.remove("hidden"); document.getElementById("viewSettings").classList.add("hidden"); });
 

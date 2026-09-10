@@ -37,17 +37,24 @@
       <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
-    <!-- PREVIEWS (CAROUSEL) -->
+    <!-- PREVIEWS (INSTAGRAM STYLE CAROUSEL) -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
-        <p class="red-alert"><b>Note:</b> This is how your picture is going to look like. So make sure you pick a picture that perfectly complements this style.</p>
+        <div class="style-note">
+          <span style="font-size: 1.2rem;">💡</span>
+          <p>This shows the desired style and lighting. Make sure you pick a picture that perfectly complements this aesthetic.</p>
+        </div>
       </div>
       <div class="carousel-container">
         <button class="car-btn" id="carPrev">❮</button>
         <div class="carousel-track" id="carouselTrack">
-          <img id="ref1" src="" alt="Reference 1" class="car-slide" style="display: none;" />
-          <img id="ref2" src="" alt="Reference 2" class="car-slide" style="display: none;" />
+          <div class="car-slide-wrapper" id="ref1Wrap" style="display: none;">
+            <img id="ref1" src="" alt="Reference 1" class="car-slide" />
+          </div>
+          <div class="car-slide-wrapper" id="ref2Wrap" style="display: none;">
+            <img id="ref2" src="" alt="Reference 2" class="car-slide" />
+          </div>
         </div>
         <button class="car-btn" id="carNext">❯</button>
       </div>
@@ -78,7 +85,6 @@
       <div class="glass-card form-box" id="formCard">
         <div id="editNotice" class="edit-badge hidden">Editing Previous Submission</div>
         
-        <!-- Step 1: Input -->
         <form id="uploadForm">
           <div class="input-grid">
             <div class="field-item">
@@ -106,10 +112,9 @@
           <button type="button" id="reviewBtn" class="btn-glow">Review Submission</button>
         </form>
 
-        <!-- Step 2: Review -->
         <div id="reviewContainer" class="hidden review-box">
           <h3>Are you sure about this information?</h3>
-          <img id="reviewImage" src="" alt="Preview" class="review-img" />
+          <div class="review-img-box"><img id="reviewImage" src="" alt="Preview" class="review-img" /></div>
           <div class="review-details">
             <h4 id="reviewName">Name</h4>
             <p id="reviewRole">Role</p>
@@ -120,7 +125,6 @@
           </div>
         </div>
 
-        <!-- Step 3: Progress -->
         <div id="progressContainer" class="progress-wrap hidden">
           <div class="progress-info"><span id="progressText">Uploading to Server...</span><span id="progressPercent">0%</span></div>
           <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
@@ -135,7 +139,7 @@
       </div>
     </section>
 
-    <!-- LEADERBOARD (CHESS.COM STYLE) -->
+    <!-- LEADERBOARD (UNCOMPRESSED) -->
     <section class="section-container">
       <div class="section-heading flex-between">
         <h3>Upload Leaderboard</h3>
@@ -194,7 +198,7 @@
       <div id="viewGallery" class="admin-view hidden">
         <div class="gallery-header">
           <h3>Media Gallery</h3>
-          <p>Full control over user submissions.</p>
+          <p>Full control over ALL user submissions and organizers.</p>
         </div>
         <div class="gallery-grid" id="adminGallery"></div>
       </div>

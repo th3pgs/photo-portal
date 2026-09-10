@@ -352,11 +352,16 @@ window.executeDelete = async (id) => {
 };
 
 window.triggerUserEdit = async (f, l, r) => {
-  document.getElementById("firstName").value = f; document.getElementById("lastName").value = l; document.getElementById("role").value = r;
+  document.getElementById("firstName").value = f; 
+  document.getElementById("lastName").value = l; 
+  document.getElementById("role").value = r;
   document.getElementById("editNotice").classList.remove("hidden"); 
   
+  // FIXED: Unhide the actual upload form and hide review section so it has something to scroll to
   document.getElementById("successCard").classList.add("hidden");
   document.getElementById("formCard").classList.remove("hidden");
+  document.getElementById("uploadForm").classList.remove("hidden"); 
+  document.getElementById("reviewContainer").classList.add("hidden");
   
   document.getElementById("formCard").scrollIntoView({ behavior: 'smooth', block: 'center' });
   

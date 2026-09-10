@@ -4,25 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Meet The Team - Uploads</title>
-  
-  <!-- Uploader Icon for Browser Tab -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Oswald:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- WELCOME OVERLAY -->
+  <!-- ENTRY GATE -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
-      <h2>Welcome!</h2>
+      <h2>Welcome to the media uploader</h2>
       <div class="steps-list">
-        <p><b>1.</b> Follow the steps in the video below to get a high-resolution, professional picture.</p>
-        <p><b>2.</b> Enter your correct information.</p>
-        <p><b>3.</b> Press upload before the deadline.</p>
+        <p><b>1. Follow the video and get a good AI generated image.</b></p>
+        <p><b>2. Pick the highest quality image.</b></p>
+        <p><b>3. Enter your correct information (First name, Last name, and your genuine role) and hit upload.</b></p>
       </div>
       <button id="enterSiteBtn" class="btn-glow">Go In</button>
     </div>
@@ -30,11 +27,18 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <main class="main-wrapper">
-    <!-- DIGITAL CLOCK (Red on White) -->
+  <!-- MAIN VIEWPORT (Becomes Minimap in Admin Mode) -->
+  <main class="main-wrapper" id="mainApp">
+    
+    <!-- PAPER FLIP CLOCK -->
     <header class="hero-timer">
-      <div id="countdown" class="digital-clock">00:00:00</div>
-      <p id="timerStatus" class="timer-sub">Loading timer...</p>
+      <h3 class="timer-title">UPLOAD BEFORE</h3>
+      <div class="flip-clock" id="flipClock">
+        <div class="flip-unit"><div class="flip-card" id="hours">00</div><span>HOURS</span></div>
+        <div class="flip-unit"><div class="flip-card" id="minutes">00</div><span>MINS</span></div>
+        <div class="flip-unit"><div class="flip-card" id="seconds">00</div><span>SECS</span></div>
+      </div>
+      <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
     <!-- PREVIEWS -->
@@ -49,79 +53,76 @@
       </div>
     </section>
 
-    <!-- CUSTOM VIDEO PLAYER -->
+    <!-- VIDEO PLAYER -->
     <section class="section-container" id="videoSection" style="display: none;">
-      <div class="video-container glass-card" id="videoContainer">
+      <div class="video-container glass-card">
         <video id="instructionVideo" playsinline preload="auto">
           <source id="videoSource" src="" type="video/mp4">
         </video>
-        
-        <!-- Hover Controls -->
-        <div class="custom-controls" id="videoControls">
-          <div class="timeline-container">
-            <input type="range" id="seekSlider" class="range-slider" value="0" min="0" max="100" step="0.1">
-          </div>
+        <div class="custom-controls">
+          <div class="timeline-container"><input type="range" id="seekSlider" class="range-slider" value="0" min="0" max="100" step="0.1"></div>
           <div class="control-buttons">
             <button id="btnBack5" class="vid-btn">⏪ -5s</button>
             <button id="btnPlayPause" class="vid-btn">⏸ Pause</button>
             <button id="btnFwd5" class="vid-btn">+5s ⏩</button>
-            
             <div class="volume-container">
-              <span style="font-size: 12px; font-weight: bold;">🔊</span>
-              <input type="range" id="volumeSlider" class="range-slider vol-slider" value="1" min="0" max="1" step="0.05">
+              <span>🔊</span><input type="range" id="volumeSlider" class="range-slider vol-slider" value="1" min="0" max="1" step="0.05">
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- UPLOAD FORM -->
+    <!-- UPLOAD FLOW -->
     <section class="section-container">
       <div class="glass-card form-box" id="formCard">
-        <div id="editNotice" class="edit-badge hidden">
-          Welcome back! Uploading again will update your picture.
-        </div>
-
+        <div id="editNotice" class="edit-badge hidden">Editing Previous Submission</div>
+        
+        <!-- Step 1: Input -->
         <form id="uploadForm">
           <div class="input-grid">
-            <div class="field-item">
-              <label>First Name</label>
-              <input type="text" id="firstName" placeholder="First Name" required autocomplete="off" />
-            </div>
-            <div class="field-item">
-              <label>Last Name</label>
-              <input type="text" id="lastName" placeholder="Last Name" required autocomplete="off" />
-            </div>
+            <div class="field-item"><label>First Name</label><input type="text" id="firstName" required autocomplete="off" /></div>
+            <div class="field-item"><label>Last Name</label><input type="text" id="lastName" required autocomplete="off" /></div>
           </div>
-
-          <div class="field-item">
-            <label>Project Role</label>
-            <input type="text" id="role" placeholder="e.g. Graphic Designer and Video Editor" required autocomplete="off" />
-          </div>
-
-          <div class="file-dropzone" id="dropZone">
-            <input type="file" id="fileInput" accept="image/*" required />
-            <div class="dropzone-content">
-              <span id="fileNameDisplay" style="font-size: 1.5rem;">📁 Choose Picture</span>
-              <small>Upload highest quality possible</small>
+          <div class="field-item"><label>Project Role</label><input type="text" id="role" required autocomplete="off" /></div>
+          
+          <div class="file-dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept="image/*" style="display:none;" required />
+            <div class="dropzone-content" id="dropzoneContent">
+              <span style="font-size: 2rem;">📸</span>
+              <h3>Choose High-Quality Picture</h3>
+              <small>Click to browse files</small>
             </div>
           </div>
-
-          <!-- PROGRESS BAR -->
-          <div id="progressContainer" class="progress-wrap hidden">
-            <div class="progress-info"><span id="progressText">Uploading...</span><span id="progressPercent">0%</span></div>
-            <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
-          </div>
-
-          <button type="submit" id="submitBtn" class="btn-glow">Upload</button>
+          <button type="button" id="reviewBtn" class="btn-glow">Review Submission</button>
         </form>
+
+        <!-- Step 2: Review (Hidden initially) -->
+        <div id="reviewContainer" class="hidden review-box">
+          <h3>Are you sure about this information?</h3>
+          <img id="reviewImage" src="" alt="Preview" class="review-img" />
+          <div class="review-details">
+            <h4 id="reviewName">Name</h4>
+            <p id="reviewRole">Role</p>
+          </div>
+          <div class="review-actions">
+            <button id="cancelReviewBtn" class="btn-secondary">Go Back</button>
+            <button id="confirmSubmitBtn" class="btn-glow confirm-btn">Yes, Upload</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Progress -->
+        <div id="progressContainer" class="progress-wrap hidden">
+          <div class="progress-info"><span id="progressText">Uploading to Server...</span><span id="progressPercent">0%</span></div>
+          <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
+        </div>
       </div>
 
       <div class="glass-card success-box hidden" id="successCard">
         <div class="success-glyph">✔</div>
-        <h2>Uploaded Successfully!</h2>
-        <p>Thanks! We have your picture for the edit.</p>
-        <button id="resetBtn" class="btn-secondary">Fix a mistake / Upload again</button>
+        <h2>Media Uploaded</h2>
+        <p>Your file has been secured.</p>
+        <button id="resetBtn" class="btn-secondary">Upload Another</button>
       </div>
     </section>
 
@@ -131,74 +132,60 @@
         <h3>Upload Leaderboard</h3>
         <span id="rosterCounter" class="counter-badge">0 Uploads</span>
       </div>
-      
-      <!-- Organizers (No Numbers) -->
       <div class="roster-wrapper" id="organizerList" style="margin-bottom: 15px;"></div>
-      
       <hr style="border: 0; border-top: 1px dashed #d1d5db; margin: 15px 0;">
-      
-      <!-- Regular Users (Numbered) -->
       <div class="roster-wrapper" id="rosterList"></div>
     </section>
-
-    <!-- ADMIN TRIGGER -->
+    
     <footer id="secretTrigger" class="secret-pad"></footer>
   </main>
 
-  <!-- MODERN ADMIN DASHBOARD -->
-  <div id="adminPanel" class="admin-panel hidden">
+  <!-- FULLSCREEN ADMIN DASHBOARD -->
+  <div id="adminPanel" class="admin-fullscreen hidden">
     <div class="admin-sidebar">
       <h2>Editor Dashboard</h2>
       <button id="tabSettings" class="admin-tab active">General Settings</button>
-      <button id="tabGallery" class="admin-tab">View Uploads</button>
-      
-      <button id="closeAdminBtn" class="btn-close-admin">Close Dashboard</button>
+      <button id="tabGallery" class="admin-tab">Media Gallery</button>
+      <button id="closeAdminBtn" class="btn-close-admin">Exit Dashboard</button>
     </div>
     
     <div class="admin-content">
-      
-      <!-- Settings Tab -->
-      <div id="viewSettings">
+      <div id="viewSettings" class="admin-view">
         <div class="admin-block">
-          <label>Set Deadline Timer</label>
+          <label>Set Upload Deadline</label>
           <input type="datetime-local" id="adminTimer" />
           <button id="saveTimerBtn" class="btn-admin-action">Update Timer</button>
         </div>
-
         <div class="admin-block">
-          <label>Upload Video</label>
+          <label>Replace Video Instruction</label>
           <input type="file" id="adminVideoFile" accept="video/*" />
           <button id="uploadVideoBtn" class="btn-admin-action">Save Video</button>
         </div>
-
         <div class="admin-block">
-          <label>Upload Preview Pictures</label>
+          <label>Replace Preview Pictures</label>
           <input type="file" id="adminImgFile1" accept="image/*" />
           <button id="uploadImgBtn1" class="btn-admin-action">Save Picture 1</button>
           <input type="file" id="adminImgFile2" accept="image/*" style="margin-top: 10px;" />
           <button id="uploadImgBtn2" class="btn-admin-action">Save Picture 2</button>
         </div>
-
-        <div class="admin-block" style="background: #f0fdf4; padding: 15px; border-radius: 12px; border: 1px solid #bbf7d0;">
-          <label>Add Organizer / Completed Users (Sits at top without numbers)</label>
+        <div class="admin-block highlight-block">
+          <label>Add Completed Organizers</label>
           <div class="input-grid">
             <input type="text" id="seedFirst" placeholder="First Name" />
             <input type="text" id="seedLast" placeholder="Last Name" />
           </div>
           <input type="text" id="seedRole" placeholder="Role" style="margin-top: 8px;" />
-          <button id="seedBtn" class="btn-admin-action" style="background: #22c55e; color: white;">Add Completed User</button>
+          <button id="seedBtn" class="btn-admin-action green-btn">Inject Organizer</button>
         </div>
       </div>
 
-      <!-- Gallery / Uploads Tab -->
-      <div id="viewGallery" class="hidden">
-        <h3>All Uploaded Pictures</h3>
-        <p style="color: gray; margin-bottom: 20px;">Only you can see this page.</p>
-        <div class="gallery-grid" id="adminGallery">
-          <!-- Images load here -->
+      <div id="viewGallery" class="admin-view hidden">
+        <div class="gallery-header">
+          <h3>Media Gallery</h3>
+          <p>Full control over user submissions.</p>
         </div>
+        <div class="gallery-grid" id="adminGallery"></div>
       </div>
-      
     </div>
   </div>
 

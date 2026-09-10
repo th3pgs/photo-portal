@@ -53,28 +53,54 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock, Video Autoplay, and Scroll Sequence
+// Gate Unlock, Loading Bar & Video Glide Sequence
 const entryGate = document.getElementById("entryGate");
+const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
-  // 1. Instantly trigger video play on click to satisfy browser policies
-  if (video.src && video.src !== window.location.href) { 
-    video.muted = false; 
-    video.volume = 1; 
-    video.play().catch(e => console.log("Autoplay blocked:", e)); 
+  // If no video is attached, skip the complex loading sequence
+  if (!video.src || video.src === window.location.href) {
+    proceedToSite();
+    return;
   }
   
-  // 2. Hide Gate
-  entryGate.style.opacity = "0"; setTimeout(() => entryGate.classList.add("hidden"), 400);
+  // Show Loader
+  entryLoader.classList.remove("hidden");
+  video.muted = false;
+  video.volume = 1;
   
-  // 3. Jump to top, then smoothly scroll down to center the video
-  window.scrollTo(0,0);
-  setTimeout(() => {
-    const vidSec = document.getElementById("videoSection");
-    if(vidSec.style.display !== "none") vidSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 400);
+  let hasPlayed = false;
+  
+  // Start attempting play
+  const playPromise = video.play();
+  if (playPromise !== undefined) {
+    playPromise.then(() => { if(!hasPlayed) { hasPlayed = true; proceedToSite(); } }).catch(() => {});
+  }
+  
+  video.addEventListener("playing", () => { if(!hasPlayed) { hasPlayed = true; proceedToSite(); } });
+  
+  // Failsafe timeout in case of extremely slow connection (5s max wait)
+  setTimeout(() => { if(!hasPlayed) { hasPlayed = true; proceedToSite(); } }, 5000);
 });
+
+function proceedToSite() {
+  entryLoader.classList.add("hidden");
+  entryGate.style.opacity = "0"; 
+  setTimeout(() => entryGate.classList.add("hidden"), 400);
+
+  // The Gliding Sequence: Jump bottom -> Glide top -> Glide video
+  window.scrollTo(0, document.body.scrollHeight);
+  
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    setTimeout(() => {
+      const vidSec = document.getElementById("videoSection");
+      if(vidSec.style.display !== "none") vidSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 800); 
+  }, 50);
+}
 
 // Mini-Player (Picture-in-Picture) Logic
 const videoContainer = document.getElementById("videoContainer");
@@ -82,7 +108,7 @@ const videoObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (!e.isIntersecting && !video.paused) {
       videoContainer.classList.add("mini-player");
-      video.setAttribute("controls", "true"); // Fallback controls for mini mode
+      video.setAttribute("controls", "true");
     } else {
       videoContainer.classList.remove("mini-player");
       video.removeAttribute("controls");
@@ -208,7 +234,7 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
 });
 
 
-// Squid Game Digital Neon Clock
+// Squid Game Digital Money Clock
 function startDigitalCountdown() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
@@ -340,8 +366,8 @@ document.getElementById("cancelReviewBtn").addEventListener("click", () => {
 
 document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
   document.getElementById("uploadOverlay").classList.remove("hidden");
-  const fd = new FormData(); fd.append("file", selectedFile); fd.append("upload_preset", CLOUDINARY_PRESET);
   
+  const fd = new FormData(); fd.append("file", selectedFile); fd.append("upload_preset", CLOUDINARY_PRESET);
   const xhr = new XMLHttpRequest(); 
   xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
   
@@ -366,7 +392,7 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
       uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime);
       document.getElementById("uploadForm").reset(); selectedFile = null;
       document.getElementById("dropzoneContent").innerHTML = `
-        <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="3" y="8" width="18" height="12" rx="2" ry="2"></rect><path d="M16 8v-2a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v2"></path><circle cx="12" cy="14" r="3"></circle></svg>
+        <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
         <h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
       
       document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("reviewContainer").classList.add("hidden");

@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <!-- LOADING BAR OVERLAY (TRIGGERS AFTER GO IN) -->
+  <!-- LOADING BAR OVERLAY -->
   <div id="entryLoader" class="loading-gate hidden">
     <div class="upload-status-box">
       <div class="spinner-large" style="margin-bottom: 25px;"></div>
@@ -38,16 +38,16 @@
 
   <main class="main-wrapper" id="mainApp">
     
-    <!-- SQUID GAME MONEY COUNTER (GOLD & BLACK) -->
+    <!-- CONSOLIDATED MONEY COUNTER BOX -->
     <header class="hero-timer" id="heroTimer">
-      <h3 class="timer-title">UPLOAD BEFORE</h3>
       <div class="timer-black-box">
+        <h3 class="timer-title flicker-text">UPLOAD BEFORE</h3>
         <div id="countdown" class="digital-money-clock">00:00:00</div>
+        <p class="timer-sub"><span id="timerStatusText">Calculating time</span><span id="loadingDots">...</span></p>
       </div>
-      <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
-    <!-- CAROUSEL SECTION (NO BORDERS) -->
+    <!-- CAROUSEL SECTION (NO ARROWS) -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
@@ -57,19 +57,12 @@
       </div>
       
       <div class="carousel-container">
-        <button class="car-btn" id="carPrev">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
         <div class="carousel-viewport">
           <div class="carousel-track" id="carouselTrack">
-            <!-- Slides dynamically managed -->
             <div class="car-slide-wrapper hidden-slide" id="ref1Wrap" data-index="0"><img id="ref1" src="" alt="Reference 1" class="car-slide" /></div>
             <div class="car-slide-wrapper hidden-slide" id="ref2Wrap" data-index="1"><img id="ref2" src="" alt="Reference 2" class="car-slide" /></div>
           </div>
         </div>
-        <button class="car-btn" id="carNext">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </button>
       </div>
       <div class="carousel-dots" id="carouselDots"></div>
     </section>
@@ -77,7 +70,6 @@
     <!-- VIDEO PLAYER -->
     <section class="section-container" id="videoSection" style="display: none;">
       <div class="video-container glass-card" id="videoContainer">
-        <!-- Removed crossorigin constraint to prevent strict CORS desktop blocks -->
         <video id="instructionVideo" playsinline preload="auto">
           <source id="videoSource" src="" type="video/mp4">
         </video>
@@ -174,10 +166,13 @@
       </div>
     </section>
 
-    <!-- UNIFIED STACKED LEADERBOARD (NO TICKS) -->
+    <!-- LIVE LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
-        <h3>Upload Leaderboard</h3>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h3 style="margin: 0;">Upload Leaderboard</h3>
+          <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+        </div>
         <span id="rosterCounter" class="counter-badge">0 Uploads</span>
       </div>
       

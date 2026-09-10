@@ -36,7 +36,6 @@ function smoothScrollToY(endY, duration) {
     function step(time) {
       let progress = (time - startTime) / duration;
       if (progress > 1) progress = 1;
-      // easeInOutCubic curve for buttery smooth feeling
       const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
       window.scrollTo(0, startY + distance * ease);
       if (progress < 1) requestAnimationFrame(step);
@@ -78,11 +77,9 @@ const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
-  // 1. Show Solid Loading Screen & Hide the gate instantly
   entryGate.style.display = "none"; 
   entryLoader.classList.remove("hidden");
   
-  // 2. Secretly trigger play/pause to unlock strict browser audio restrictions
   video.muted = false;
   video.volume = 1;
   const playPromise = video.play();
@@ -90,31 +87,24 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
     playPromise.then(() => { video.pause(); video.currentTime = 0; }).catch(() => {});
   }
 
-  // 3. Wait for video to actually buffer so it doesn't fail on play later
   let hasInitiatedGlide = false;
   
   const startGlide = () => {
     if(hasInitiatedGlide) return;
     hasInitiatedGlide = true;
     
-    // Jump instantly to Absolute Bottom
     window.scrollTo(0, document.body.scrollHeight);
     
-    // Fade out loader
     entryLoader.style.opacity = "0";
     setTimeout(() => { 
       entryLoader.classList.add("hidden"); 
       
-      // GLIDE 1: Bottom to Top (2.5 seconds)
       smoothScrollToY(0, 2500).then(() => {
-        
-        // GLIDE 2: Top to Center of Video (2.5 seconds)
         const vidSec = document.getElementById("videoSection");
         if(vidSec.style.display !== "none") {
           const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
           
           smoothScrollToY(targetY, 2500).then(() => {
-            // Sequence Complete. Start full playback.
             video.currentTime = 0;
             video.play().catch(()=>{});
           });
@@ -123,16 +113,15 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
     }, 400);
   };
 
-  // If video buffers fast, trigger glide. Otherwise failsafe trigger after 3 seconds.
   if (video.readyState >= 3 || !video.src || video.src === window.location.href) {
-    setTimeout(startGlide, 1000); // Give user 1s to read "Site getting ready..."
+    setTimeout(startGlide, 1000); 
   } else {
     video.addEventListener("canplay", startGlide);
     setTimeout(startGlide, 3000); 
   }
 });
 
-// Mini-Player (Picture-in-Picture) Logic
+// Mini-Player Logic
 const videoContainer = document.getElementById("videoContainer");
 const videoObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
@@ -147,7 +136,7 @@ const videoObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 videoObserver.observe(document.getElementById("videoSection"));
 
-// Infinite True Loop Carousel
+// Infinite True Loop Carousel (No Rewind)
 const track = document.getElementById("carouselTrack");
 let carTimer;
 
@@ -174,28 +163,10 @@ function slideNext() {
   }, 400);
 }
 
-function slidePrev() {
-  const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
-  if(slides.length <= 1) return;
-  
-  track.prepend(track.lastElementChild);
-  track.style.transition = 'none';
-  track.style.transform = 'translateX(-100%)';
-  
-  setTimeout(() => {
-    track.style.transition = 'transform 0.4s ease-in-out';
-    track.style.transform = 'translateX(0)';
-    updateCarouselDots();
-  }, 10);
-}
-
 function startCarousel() { clearInterval(carTimer); carTimer = setInterval(slideNext, 4000); }
 
 function initCarousel() {
   const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
-  document.getElementById("carPrev").style.display = slides.length > 1 ? "flex" : "none";
-  document.getElementById("carNext").style.display = slides.length > 1 ? "flex" : "none";
-  
   const dc = document.getElementById("carouselDots");
   dc.innerHTML = "";
   if(slides.length > 1) {
@@ -208,9 +179,6 @@ function initCarousel() {
     startCarousel();
   }
 }
-
-document.getElementById("carPrev").addEventListener("click", () => { slidePrev(); startCarousel(); });
-document.getElementById("carNext").addEventListener("click", () => { slideNext(); startCarousel(); });
 
 // Video Custom Controls
 const ppBtn = document.getElementById("btnPlayPause");
@@ -260,7 +228,14 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
   }
 });
 
-// Squid Game Digital Money Clock
+// Squid Game Digital Money Clock with Animated Dots
+let dotCount = 1;
+setInterval(() => {
+  dotCount = (dotCount % 3) + 1;
+  const ld = document.getElementById("loadingDots");
+  if(ld) ld.innerText = ".".repeat(dotCount);
+}, 400);
+
 function startDigitalCountdown() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
@@ -272,7 +247,7 @@ function startDigitalCountdown() {
     const s = Math.floor((abs % (1000 * 60)) / 1000).toString().padStart(2, "0");
 
     document.getElementById("countdown").innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
-    document.getElementById("timerStatus").textContent = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
+    document.getElementById("timerStatusText").innerText = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
 
     document.querySelectorAll('.time-updater').forEach(el => {
       if(el.dataset.time) el.innerText = timeAgo(new Date(parseInt(el.dataset.time)));
@@ -284,7 +259,9 @@ function startDigitalCountdown() {
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
-// Unified Leaderboard (No SVGs)
+const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+// Unified Leaderboard 
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -312,6 +289,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         <div class="chess-status">
           ${editBtn}
           <span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>
+          ${tickIcon}
         </div>
       </div>`;
     
@@ -477,7 +455,6 @@ function adminCloudUploadWithProgress(file, labelTitle) {
         const resp = JSON.parse(xhr.responseText);
         let finalUrl = resp.secure_url;
         
-        // This physically recodes mobile HEVC/MOV into desktop-ready H264 MP4
         if (resp.resource_type === "video") {
            let parts = finalUrl.split('/upload/');
            let base = parts[0] + '/upload/f_mp4,vc_h264,q_auto/';

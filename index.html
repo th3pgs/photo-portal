@@ -7,12 +7,12 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- PROPERLY BLURRED ENTRY GATE -->
+  <!-- ENTRY GATE -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
       <h2>Welcome to the media uploader</h2>
@@ -29,55 +29,63 @@
 
   <main class="main-wrapper" id="mainApp">
     
-    <!-- APPLE STYLE RIPPLE TIMER -->
+    <!-- SQUID GAME NEON CLOCK -->
     <header class="hero-timer">
       <h3 class="timer-title">UPLOAD BEFORE</h3>
-      <div class="apple-timer-wrapper">
-        <div class="ripple-node"></div>
-        <div class="apple-clock">
-          <span id="t-hours">00</span><span class="sep">:</span><span id="t-minutes">00</span><span class="sep">:</span><span id="t-seconds">00</span>
-        </div>
-        <div class="ripple-node"></div>
-      </div>
+      <div id="countdown" class="digital-neon-clock">00:00:00</div>
       <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
-    <!-- STANDARD SLIDING CAROUSEL -->
+    <!-- INFINITE CAROUSEL (NO BORDERS) -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
         <div class="style-note">
+          <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           <p><b>* Note:</b> This is how it's going to look like. Make sure to get a good image that looks like this, either by uploading a high-quality good image that you have, or an AI-generated one using the method described in the video.</p>
         </div>
       </div>
       
       <div class="carousel-container">
-        <button class="car-btn" id="carPrev">❮</button>
+        <button class="car-btn" id="carPrev">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
         <div class="carousel-viewport">
           <div class="carousel-track" id="carouselTrack">
-            <div class="car-slide-wrapper hidden-slide" id="ref1Wrap"><img id="ref1" src="" alt="Reference 1" class="car-slide" /></div>
-            <div class="car-slide-wrapper hidden-slide" id="ref2Wrap"><img id="ref2" src="" alt="Reference 2" class="car-slide" /></div>
+            <!-- Slides dynamically managed -->
+            <div class="car-slide-wrapper hidden-slide" id="ref1Wrap" data-index="0"><img id="ref1" src="" alt="Reference 1" class="car-slide" /></div>
+            <div class="car-slide-wrapper hidden-slide" id="ref2Wrap" data-index="1"><img id="ref2" src="" alt="Reference 2" class="car-slide" /></div>
           </div>
         </div>
-        <button class="car-btn" id="carNext">❯</button>
+        <button class="car-btn" id="carNext">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
       </div>
       <div class="carousel-dots" id="carouselDots"></div>
     </section>
 
-    <!-- VIDEO PLAYER -->
+    <!-- VIDEO PLAYER (AUTO-MINIMIZES ON SCROLL) -->
     <section class="section-container" id="videoSection" style="display: none;">
-      <div class="video-container glass-card">
+      <div class="video-container glass-card" id="videoContainer">
         <video id="instructionVideo" playsinline preload="auto">
           <source id="videoSource" src="" type="video/mp4">
         </video>
-        <div class="custom-controls">
+        <div class="custom-controls" id="videoControls">
           <div class="timeline-container"><input type="range" id="seekSlider" class="range-slider" value="0" min="0" max="100" step="0.1"></div>
           <div class="control-buttons">
-            <button id="btnBack5" class="vid-btn">⏪ -5s</button>
-            <button id="btnPlayPause" class="vid-btn">⏸ Pause</button>
-            <button id="btnFwd5" class="vid-btn">+5s ⏩</button>
+            <button id="btnBack5" class="vid-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 17l-5-5 5-5"></path><path d="M18 17l-5-5 5-5"></path></svg>
+            </button>
+            <button id="btnPlayPause" class="vid-btn" style="width:24px;">
+              <svg id="iconPlay" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg id="iconPause" class="hidden" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+            <button id="btnFwd5" class="vid-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M13 17l5-5-5-5"></path><path d="M6 17l5-5-5-5"></path></svg>
+            </button>
             <div class="volume-container">
-              <span>🔊</span><input type="range" id="volumeSlider" class="range-slider vol-slider" value="1" min="0" max="1" step="0.05">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+              <input type="range" id="volumeSlider" class="range-slider vol-slider" value="1" min="0" max="1" step="0.05">
             </div>
           </div>
         </div>
@@ -88,7 +96,6 @@
     <section class="section-container">
       <div class="glass-card form-box relative-box" id="formCard">
         
-        <!-- BLOCKING USER UPLOAD OVERLAY -->
         <div id="uploadOverlay" class="upload-overlay hidden">
           <div class="upload-status-box">
             <div class="spinner-large"></div>
@@ -98,7 +105,10 @@
           </div>
         </div>
 
-        <div id="editNotice" class="edit-badge hidden">Editing Previous Submission</div>
+        <div id="editNotice" class="edit-badge hidden">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Editing Previous Submission
+        </div>
         
         <form id="uploadForm">
           <div class="input-grid">
@@ -121,7 +131,7 @@
           <div class="file-dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
             <input type="file" id="fileInput" accept="image/*" style="display:none;" required />
             <div class="dropzone-content" id="dropzoneContent">
-              <span style="font-size: 2rem;">📸</span>
+              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="3" y="8" width="18" height="12" rx="2" ry="2"></rect><path d="M16 8v-2a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v2"></path><circle cx="12" cy="14" r="3"></circle></svg>
               <h3>Choose High-Quality Picture</h3>
               <small>Click to browse files</small>
             </div>
@@ -144,14 +154,16 @@
       </div>
 
       <div class="glass-card success-box hidden" id="successCard">
-        <div class="success-glyph">✔</div>
+        <div class="success-glyph">
+          <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
         <h2>Media Uploaded</h2>
         <p>Your file has been secured.</p>
         <button id="resetBtn" class="btn-secondary" style="margin-top:20px;">Upload Another / Fix Mistake</button>
       </div>
     </section>
 
-    <!-- LEADERBOARD -->
+    <!-- UNIFIED STACKED LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
         <h3>Upload Leaderboard</h3>
@@ -173,7 +185,6 @@
   <!-- ADMIN DASHBOARD -->
   <div id="adminPanel" class="admin-fullscreen hidden">
     
-    <!-- BLOCKING ADMIN UPLOAD OVERLAY -->
     <div id="adminUploadOverlay" class="upload-overlay hidden" style="z-index: 1000000;">
       <div class="upload-status-box">
         <div class="spinner-large"></div>
@@ -194,7 +205,6 @@
       <div id="viewSettings" class="admin-view">
         <div class="admin-header">
           <h3>System Configuration</h3>
-          <p>Manage the timer, instructional video, and styling assets.</p>
         </div>
 
         <div class="admin-card">
@@ -229,22 +239,11 @@
             <button id="removeImgBtn2" class="btn-admin-danger">Remove</button>
           </div>
         </div>
-
-        <div class="admin-card highlight-card">
-          <h4>Add "Already Uploaded" User</h4>
-          <div class="input-grid">
-            <input type="text" id="seedFirst" placeholder="First Name (e.g. Elon)" />
-            <input type="text" id="seedLast" placeholder="Last Name (e.g. Musk)" />
-          </div>
-          <input type="text" id="seedRole" placeholder="Role (e.g. Video Editor)" style="margin-top: 8px; width: 100%;" />
-          <button id="seedBtn" class="btn-admin-action green-btn" style="margin-top: 10px; width: 100%;">Add to Leaderboard</button>
-        </div>
       </div>
 
       <div id="viewGallery" class="admin-view hidden">
         <div class="admin-header">
           <h3>Media Gallery</h3>
-          <p>Review, download, or permanently delete user submissions.</p>
         </div>
         <div class="gallery-grid" id="adminGallery"></div>
       </div>

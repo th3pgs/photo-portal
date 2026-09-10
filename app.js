@@ -26,10 +26,21 @@ let cachedAdmin = false;
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
-function showToast(msg) {
+// Top Corner Toast with Scroll-to-Edit callback
+function showToast(msg, scrollToForm = false) {
   const c = document.getElementById("toastContainer");
-  const t = document.createElement("div"); t.className = "glass-toast"; t.innerText = msg;
-  c.appendChild(t); setTimeout(() => t.remove(), 4000);
+  const t = document.createElement("div"); t.className = "glass-toast"; 
+  t.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> <span>${msg}</span>`;
+  
+  if (scrollToForm) {
+    t.onclick = () => {
+      document.getElementById("formCard").scrollIntoView({ behavior: 'smooth', block: 'center' });
+      t.remove();
+    };
+  }
+  
+  c.appendChild(t); 
+  setTimeout(() => { if(t.parentElement) t.remove(); }, 6000);
 }
 window.showToast = showToast;
 
@@ -37,76 +48,133 @@ function timeAgo(date) {
   if (!date) return "Just now";
   const seconds = Math.floor((new Date() - date) / 1000);
   let int = seconds / 86400; if (int >= 1) return Math.floor(int) + " days ago";
-  int = seconds / 3600; if (int >= 1) return Math.floor(int) + " hours ago";
+  int = seconds / 3600; if (int >= 1) return Math.floor(int) + " hrs ago";
   int = seconds / 60; if (int >= 1) return Math.floor(int) + " mins ago";
   return "Just now";
 }
 
-// Gate & Video Initialization
+// Gate Unlock, Video Autoplay, and Scroll Sequence
 const entryGate = document.getElementById("entryGate");
 const video = document.getElementById("instructionVideo");
 
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
-  entryGate.style.opacity = "0"; setTimeout(() => entryGate.classList.add("hidden"), 400);
-  if (video.src && video.src !== window.location.href) { video.volume = 1; video.play().catch(()=>{}); }
-});
-
-// Standard Classical Carousel Logic
-let carIndex = 0;
-let carTimer;
-const track = document.getElementById("carouselTrack");
-
-function updateCarousel() {
-  const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
-  if (slides.length <= 1) {
-    document.getElementById("carPrev").style.display = "none";
-    document.getElementById("carNext").style.display = "none";
-    document.getElementById("carouselDots").style.display = "none";
-    track.style.transform = `translateX(0%)`;
-    return;
+  // 1. Instantly trigger video play on click to satisfy browser policies
+  if (video.src && video.src !== window.location.href) { 
+    video.muted = false; 
+    video.volume = 1; 
+    video.play().catch(e => console.log("Autoplay blocked:", e)); 
   }
   
-  document.getElementById("carPrev").style.display = "flex";
-  document.getElementById("carNext").style.display = "flex";
-  document.getElementById("carouselDots").style.display = "flex";
+  // 2. Hide Gate
+  entryGate.style.opacity = "0"; setTimeout(() => entryGate.classList.add("hidden"), 400);
+  
+  // 3. Jump to top, then smoothly scroll down to center the video
+  window.scrollTo(0,0);
+  setTimeout(() => {
+    const vidSec = document.getElementById("videoSection");
+    if(vidSec.style.display !== "none") vidSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 400);
+});
 
-  if (carIndex >= slides.length) carIndex = 0;
-  if (carIndex < 0) carIndex = slides.length - 1;
+// Mini-Player (Picture-in-Picture) Logic
+const videoContainer = document.getElementById("videoContainer");
+const videoObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting && !video.paused) {
+      videoContainer.classList.add("mini-player");
+      video.setAttribute("controls", "true"); // Fallback controls for mini mode
+    } else {
+      videoContainer.classList.remove("mini-player");
+      video.removeAttribute("controls");
+    }
+  });
+}, { threshold: 0.1 });
+videoObserver.observe(document.getElementById("videoSection"));
 
-  track.style.transform = `translateX(-${carIndex * 100}%)`;
 
-  const dots = document.querySelectorAll('#carouselDots .dot');
-  dots.forEach((d, i) => d.classList.toggle('active', i === carIndex));
-}
+// Infinite Forward Loop Carousel Logic
+const track = document.getElementById("carouselTrack");
+let carTimer;
 
-function startCarousel() {
-  clearInterval(carTimer);
-  carTimer = setInterval(() => { carIndex++; updateCarousel(); }, 4000); // Slides every 4s
-}
-
-function rebuildDots() {
+function updateCarouselDots() {
   const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
+  if(slides.length <= 1) return;
+  const currentIndex = parseInt(track.firstElementChild.dataset.index);
+  const dots = document.querySelectorAll('#carouselDots .dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
+}
+
+function slideNext() {
+  const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
+  if(slides.length <= 1) return;
+  
+  track.style.transition = 'transform 0.4s ease-in-out';
+  track.style.transform = 'translateX(-100%)';
+  
+  setTimeout(() => {
+    track.appendChild(track.firstElementChild);
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+    updateCarouselDots();
+  }, 400);
+}
+
+function slidePrev() {
+  const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
+  if(slides.length <= 1) return;
+  
+  track.prepend(track.lastElementChild);
+  track.style.transition = 'none';
+  track.style.transform = 'translateX(-100%)';
+  
+  setTimeout(() => {
+    track.style.transition = 'transform 0.4s ease-in-out';
+    track.style.transform = 'translateX(0)';
+    updateCarouselDots();
+  }, 10);
+}
+
+function startCarousel() { clearInterval(carTimer); carTimer = setInterval(slideNext, 4000); }
+
+function initCarousel() {
+  const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)');
+  document.getElementById("carPrev").style.display = slides.length > 1 ? "flex" : "none";
+  document.getElementById("carNext").style.display = slides.length > 1 ? "flex" : "none";
+  
   const dc = document.getElementById("carouselDots");
   dc.innerHTML = "";
-  for(let i=0; i<slides.length; i++) {
-    const d = document.createElement("span"); d.className = "dot";
-    if(i===0) d.classList.add("active");
-    d.onclick = () => { carIndex = i; updateCarousel(); startCarousel(); };
-    dc.appendChild(d);
+  if(slides.length > 1) {
+    slides.forEach((s, i) => {
+      s.dataset.index = i; // Map original positions
+      const d = document.createElement("span"); d.className = "dot";
+      if(i===0) d.classList.add("active");
+      dc.appendChild(d);
+    });
+    startCarousel();
   }
 }
 
-document.getElementById("carPrev").addEventListener("click", () => { carIndex--; updateCarousel(); startCarousel(); });
-document.getElementById("carNext").addEventListener("click", () => { carIndex++; updateCarousel(); startCarousel(); });
+document.getElementById("carPrev").addEventListener("click", () => { slidePrev(); startCarousel(); });
+document.getElementById("carNext").addEventListener("click", () => { slideNext(); startCarousel(); });
 
 
-// Video Controls
+// Video Custom Controls
 const ppBtn = document.getElementById("btnPlayPause");
 const seek = document.getElementById("seekSlider");
 const vol = document.getElementById("volumeSlider");
+const iPlay = document.getElementById("iconPlay");
+const iPause = document.getElementById("iconPause");
+
 ppBtn.addEventListener("click", () => {
-  if (video.paused) { video.play(); ppBtn.innerText = "⏸ Pause"; } else { video.pause(); ppBtn.innerText = "▶ Play"; }
+  if (video.paused) { 
+    video.play(); iPlay.classList.add("hidden"); iPause.classList.remove("hidden");
+  } else { 
+    video.pause(); iPause.classList.add("hidden"); iPlay.classList.remove("hidden");
+  }
 });
+video.addEventListener("play", () => { iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); });
+video.addEventListener("pause", () => { iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); });
+
 document.getElementById("btnBack5").addEventListener("click", () => video.currentTime -= 5);
 document.getElementById("btnFwd5").addEventListener("click", () => video.currentTime += 5);
 video.addEventListener("timeupdate", () => seek.value = (100 / video.duration) * video.currentTime || 0);
@@ -118,28 +186,21 @@ vol.addEventListener("input", () => video.volume = vol.value);
 onSnapshot(doc(db, "config", "settings"), (snap) => {
   if (snap.exists()) {
     const d = snap.data();
-    if (d.deadline) { deadlineDate = new Date(d.deadline); startAppleTimer(); }
+    if (d.deadline) { deadlineDate = new Date(d.deadline); startDigitalCountdown(); }
     
     if (d.preview1 || d.preview2) {
       document.getElementById("previewSection").style.display = "block";
-      
-      const w1 = document.getElementById("ref1Wrap");
-      const w2 = document.getElementById("ref2Wrap");
-      
+      const w1 = document.getElementById("ref1Wrap"); const w2 = document.getElementById("ref2Wrap");
       if (d.preview1) { document.getElementById("ref1").src = d.preview1; w1.classList.remove("hidden-slide"); } else { w1.classList.add("hidden-slide"); }
       if (d.preview2) { document.getElementById("ref2").src = d.preview2; w2.classList.remove("hidden-slide"); } else { w2.classList.add("hidden-slide"); }
-      
-      carIndex = 0;
-      rebuildDots();
-      updateCarousel();
-      startCarousel();
+      initCarousel();
     } else {
       document.getElementById("previewSection").style.display = "none";
     }
     
     if (d.videoUrl) {
       document.getElementById("videoSection").style.display = "block";
-      document.getElementById("videoSource").src = d.videoUrl; video.load();
+      video.src = d.videoUrl;
     } else {
       document.getElementById("videoSection").style.display = "none";
     }
@@ -147,19 +208,19 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
 });
 
 
-// Apple Ripple Timer
-function startAppleTimer() {
+// Squid Game Digital Neon Clock
+function startDigitalCountdown() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     if (!deadlineDate) return;
     const diff = deadlineDate.getTime() - Date.now();
     const abs = Math.abs(diff);
-    
-    document.getElementById("t-hours").innerText = Math.floor(abs / (1000 * 60 * 60)).toString().padStart(2, "0");
-    document.getElementById("t-minutes").innerText = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, "0");
-    document.getElementById("t-seconds").innerText = Math.floor((abs % (1000 * 60)) / 1000).toString().padStart(2, "0");
-    
-    document.getElementById("timerStatus").textContent = diff < 0 ? "DEADLINE PASSED" : "Time remaining before submission lock";
+    const h = Math.floor(abs / (1000 * 60 * 60)).toString().padStart(2, "0");
+    const m = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, "0");
+    const s = Math.floor((abs % (1000 * 60)) / 1000).toString().padStart(2, "0");
+
+    document.getElementById("countdown").innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
+    document.getElementById("timerStatus").textContent = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
 
     document.querySelectorAll('.time-updater').forEach(el => {
       if(el.dataset.time) el.innerText = timeAgo(new Date(parseInt(el.dataset.time)));
@@ -171,7 +232,9 @@ function startAppleTimer() {
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
-// Leaderboard Sync
+const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+// Unified Leaderboard (No Dividers)
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -187,28 +250,29 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
     
     let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : Date.now()) : Date.now();
-    const timeHtml = `<div class="chess-time time-updater" data-time="${tsMillis}">${timeAgo(new Date(tsMillis))}</div>`;
+    const timeText = timeAgo(new Date(tsMillis));
 
     const cardHtml = `
       <div class="chess-row">
         ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
         <div class="chess-details">
-          <span class="chess-name">${d.firstName} ${d.lastName}</span>
+          <span class="chess-name">${d.firstName} <span style="font-weight:400;">${d.lastName}</span></span>
           <span class="chess-role">${d.role}</span>
-          ${timeHtml}
         </div>
         <div class="chess-status">
-          ${editBtn} <span class="chess-tick">✔</span>
+          ${editBtn}
+          <span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>
+          ${tickIcon}
         </div>
       </div>`;
     
     d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
 
-    // Admin Gallery Cards
+    // Admin Gallery
     let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`;
     let dlBtn = '';
     if (d.imageUrl) {
-      if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov")) {
+      if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov") || d.imageUrl.includes("/video/")) {
         imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
       } else {
         imgHtml = `<img src="${d.imageUrl}">`;
@@ -244,16 +308,19 @@ window.executeDelete = async (id) => {
 
 window.triggerUserEdit = (f, l, r) => {
   document.getElementById("firstName").value = f; document.getElementById("lastName").value = l; document.getElementById("role").value = r;
-  document.getElementById("editNotice").classList.remove("hidden"); window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("editNotice").classList.remove("hidden"); 
+  document.getElementById("formCard").scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
-// Main User Upload XHR Process
+// Main Upload
 let selectedFile = null;
 const fileInput = document.getElementById("fileInput");
 fileInput.addEventListener("change", (e) => {
   if (e.target.files[0]) {
     selectedFile = e.target.files[0];
-    document.getElementById("dropzoneContent").innerHTML = `<span style="font-size:2rem">✅</span><h3>${selectedFile.name}</h3><small>Ready for review</small>`;
+    document.getElementById("dropzoneContent").innerHTML = `
+      <svg class="icon-svg" style="width:48px;height:48px;color:#10b981;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <h3 style="color:#10b981;">${selectedFile.name}</h3><small>Ready for review</small>`;
   }
 });
 
@@ -275,7 +342,8 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
   document.getElementById("uploadOverlay").classList.remove("hidden");
   const fd = new FormData(); fd.append("file", selectedFile); fd.append("upload_preset", CLOUDINARY_PRESET);
   
-  const xhr = new XMLHttpRequest(); xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
+  const xhr = new XMLHttpRequest(); 
+  xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
   
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) {
@@ -287,20 +355,24 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
   };
   xhr.onload = async () => {
     if (xhr.status === 200) {
-      const res = JSON.parse(xhr.responseText);
+      const resp = JSON.parse(xhr.responseText);
+      let finalUrl = resp.secure_url;
+      if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,q_auto/");
+
       await setDoc(doc(db, "submissions", myId), {
         firstName: document.getElementById("firstName").value, lastName: document.getElementById("lastName").value, role: document.getElementById("role").value,
-        imageUrl: res.secure_url, isOrganizer: false, time: serverTimestamp()
+        imageUrl: finalUrl, isOrganizer: false, time: serverTimestamp()
       });
       uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime);
       document.getElementById("uploadForm").reset(); selectedFile = null;
-      document.getElementById("dropzoneContent").innerHTML = `<span style="font-size:2rem">📸</span><h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
+      document.getElementById("dropzoneContent").innerHTML = `
+        <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="3" y="8" width="18" height="12" rx="2" ry="2"></rect><path d="M16 8v-2a2 2 0 0 0-2-2H10a2 2 0 0 0-2 2v2"></path><circle cx="12" cy="14" r="3"></circle></svg>
+        <h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
       
-      document.getElementById("uploadOverlay").classList.add("hidden");
-      document.getElementById("reviewContainer").classList.add("hidden");
-      document.getElementById("formCard").classList.add("hidden"); 
-      document.getElementById("successCard").classList.remove("hidden");
-      showToast("Got something wrong? You have five minutes to edit your submission.");
+      document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("reviewContainer").classList.add("hidden");
+      document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
+      
+      showToast("Submission Recorded! Click here if you need to edit your submission (5m window).", true);
     } else { 
       showToast("Upload failed."); document.getElementById("uploadOverlay").classList.add("hidden");
     }
@@ -329,7 +401,7 @@ document.getElementById("closeAdminBtn").addEventListener("click", () => documen
 document.getElementById("tabSettings").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabGallery").classList.remove("active"); document.getElementById("viewSettings").classList.remove("hidden"); document.getElementById("viewGallery").classList.add("hidden"); });
 document.getElementById("tabGallery").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabSettings").classList.remove("active"); document.getElementById("viewGallery").classList.remove("hidden"); document.getElementById("viewSettings").classList.add("hidden"); });
 
-// Admin Dashboard XHR Upload With Progress Overlay
+// Admin Upload Blocking Overlay
 function adminCloudUploadWithProgress(file, labelTitle) {
   return new Promise((resolve, reject) => {
     document.getElementById("adminUploadOverlay").classList.remove("hidden");
@@ -346,26 +418,25 @@ function adminCloudUploadWithProgress(file, labelTitle) {
         const p = Math.round((e.loaded / e.total) * 100);
         document.getElementById("adminProgressBar").style.width = p + "%";
         document.getElementById("adminProgressPercent").innerText = p + "%";
-        if(p === 100) document.getElementById("adminOverlayText").innerText = "Processing File...";
+        if(p === 100) document.getElementById("adminOverlayText").innerText = "Processing Format...";
       }
     };
     
     xhr.onload = () => {
       document.getElementById("adminUploadOverlay").classList.add("hidden");
-      if (xhr.status === 200) resolve(JSON.parse(xhr.responseText).secure_url);
+      if (xhr.status === 200) {
+        const resp = JSON.parse(xhr.responseText);
+        let finalUrl = resp.secure_url;
+        if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,q_auto/");
+        resolve(finalUrl);
+      }
       else { showToast("Upload failed server-side."); reject("Failed"); }
     };
-    
-    xhr.onerror = () => {
-      document.getElementById("adminUploadOverlay").classList.add("hidden");
-      showToast("Network Error."); reject("Error");
-    };
-    
+    xhr.onerror = () => { document.getElementById("adminUploadOverlay").classList.add("hidden"); showToast("Network Error."); reject("Error"); };
     xhr.send(fd);
   });
 }
 
-// Config Saving & Removals
 document.getElementById("saveTimerBtn").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { deadline: new Date(document.getElementById("adminTimer").value).toISOString() }, { merge: true }); showToast("Timer Updated!"); });
 
 document.getElementById("uploadVideoBtn").addEventListener("click", async () => { 
@@ -382,8 +453,7 @@ document.getElementById("uploadImgBtn1").addEventListener("click", async () => {
   const f = document.getElementById("adminImgFile1").files[0]; if (!f) return; 
   try {
     const url = await adminCloudUploadWithProgress(f, "Uploading Picture 1..."); 
-    await setDoc(doc(db, "config", "settings"), { preview1: url }, { merge: true }); 
-    showToast("Pic 1 Saved!"); 
+    await setDoc(doc(db, "config", "settings"), { preview1: url }, { merge: true }); showToast("Pic 1 Saved!"); 
   } catch(e){}
 });
 document.getElementById("removeImgBtn1").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview1: "" }, { merge: true }); showToast("Pic 1 Removed."); });
@@ -392,8 +462,7 @@ document.getElementById("uploadImgBtn2").addEventListener("click", async () => {
   const f = document.getElementById("adminImgFile2").files[0]; if (!f) return; 
   try {
     const url = await adminCloudUploadWithProgress(f, "Uploading Picture 2..."); 
-    await setDoc(doc(db, "config", "settings"), { preview2: url }, { merge: true }); 
-    showToast("Pic 2 Saved!"); 
+    await setDoc(doc(db, "config", "settings"), { preview2: url }, { merge: true }); showToast("Pic 2 Saved!"); 
   } catch(e){}
 });
 document.getElementById("removeImgBtn2").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview2: "" }, { merge: true }); showToast("Pic 2 Removed."); });

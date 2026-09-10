@@ -12,12 +12,12 @@
 </head>
 <body>
 
-  <!-- LOADING BAR OVERLAY -->
+  <!-- BRIGHT WHITE/MAGENTA LOADING BAR OVERLAY -->
   <div id="entryLoader" class="loading-gate hidden">
     <div class="upload-status-box">
-      <div class="spinner-large" style="margin-bottom: 25px;"></div>
-      <h3 style="color: #fff; margin-bottom: 15px; letter-spacing: 1px;">Site getting ready...</h3>
-      <div class="progress-bar-bg" style="background: rgba(255,255,255,0.1);"><div class="progress-bar-fill fake-loading-bar"></div></div>
+      <div class="spinner-magenta" style="margin-bottom: 25px;"></div>
+      <h3 style="color: #1e293b; margin-bottom: 15px; letter-spacing: 1px;">Site getting ready...</h3>
+      <div class="progress-bar-bg" style="background: #e2e8f0;"><div class="fake-loading-bar-magenta"></div></div>
     </div>
   </div>
 
@@ -30,7 +30,7 @@
         <p><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
         <p><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
       </div>
-      <button id="enterSiteBtn" class="btn-glow">Go In</button>
+      <button id="enterSiteBtn" class="btn-magenta">Go In</button>
     </div>
   </div>
 
@@ -38,7 +38,7 @@
 
   <main class="main-wrapper" id="mainApp">
     
-    <!-- CONSOLIDATED MONEY COUNTER BOX -->
+    <!-- SQUID GAME MONEY COUNTER (GOLD & BLACK) -->
     <header class="hero-timer" id="heroTimer">
       <div class="timer-black-box">
         <h3 class="timer-title flicker-text">UPLOAD BEFORE</h3>
@@ -47,7 +47,7 @@
       </div>
     </header>
 
-    <!-- CAROUSEL SECTION (NO ARROWS) -->
+    <!-- CAROUSEL SECTION -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
@@ -59,6 +59,7 @@
       <div class="carousel-container">
         <div class="carousel-viewport">
           <div class="carousel-track" id="carouselTrack">
+            <!-- Slides dynamically managed -->
             <div class="car-slide-wrapper hidden-slide" id="ref1Wrap" data-index="0"><img id="ref1" src="" alt="Reference 1" class="car-slide" /></div>
             <div class="car-slide-wrapper hidden-slide" id="ref2Wrap" data-index="1"><img id="ref2" src="" alt="Reference 2" class="car-slide" /></div>
           </div>
@@ -194,9 +195,9 @@
     <div id="adminUploadOverlay" class="upload-overlay hidden" style="z-index: 1000000;">
       <div class="upload-status-box">
         <div class="spinner-large" style="margin-bottom: 25px;"></div>
-        <h3 id="adminOverlayText" style="color: #fff; margin-bottom: 15px;">Uploading Media...</h3>
-        <div class="progress-bar-bg" style="background: rgba(255,255,255,0.2);"><div id="adminProgressBar" class="progress-bar-fill"></div></div>
-        <p id="adminProgressPercent" style="font-weight: bold; margin-top: 10px; color: #fff;">0%</p>
+        <h3 id="adminOverlayText" style="color: #1e293b; margin-bottom: 15px;">Uploading Media...</h3>
+        <div class="progress-bar-bg" style="background: #e2e8f0;"><div id="adminProgressBar" class="progress-bar-fill"></div></div>
+        <p id="adminProgressPercent" style="font-weight: bold; margin-top: 10px; color: #1e293b;">0%</p>
       </div>
     </div>
 

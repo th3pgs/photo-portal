@@ -23,10 +23,11 @@ const provider = new GoogleAuthProvider();
 let deadlineDate = null;
 let timerInterval = null;
 let cachedAdmin = false;
+let isIntroGliding = false; // Lock for PiP player
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
-// JS Smooth Scroll Animation Engine (Absolute precise timing)
+// Smooth Scroll Math Curve
 function smoothScrollToY(endY, duration) {
   const startY = window.scrollY || window.pageYOffset;
   const distance = endY - startY;
@@ -71,7 +72,7 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock, Loading Screen & 5-Second Glide Sequence
+// Gate Unlock & 5-Second Glide Sequence
 const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
@@ -80,11 +81,13 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   entryGate.style.display = "none"; 
   entryLoader.classList.remove("hidden");
   
-  video.muted = false;
-  video.volume = 1;
-  const playPromise = video.play();
-  if (playPromise !== undefined) {
-    playPromise.then(() => { video.pause(); video.currentTime = 0; }).catch(() => {});
+  if (video.src && video.src !== window.location.href) {
+    video.muted = false;
+    video.volume = 1;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => { video.pause(); video.currentTime = 0; }).catch(() => {});
+    }
   }
 
   let hasInitiatedGlide = false;
@@ -92,6 +95,7 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   const startGlide = () => {
     if(hasInitiatedGlide) return;
     hasInitiatedGlide = true;
+    isIntroGliding = true; // Lock PiP
     
     window.scrollTo(0, document.body.scrollHeight);
     
@@ -107,24 +111,31 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
           smoothScrollToY(targetY, 2500).then(() => {
             video.currentTime = 0;
             video.play().catch(()=>{});
+            setTimeout(() => { isIntroGliding = false; }, 500); // Unlock PiP
           });
+        } else {
+          isIntroGliding = false;
         }
       });
     }, 400);
   };
 
-  if (video.readyState >= 3 || !video.src || video.src === window.location.href) {
-    setTimeout(startGlide, 1000); 
-  } else {
-    video.addEventListener("canplay", startGlide);
-    setTimeout(startGlide, 3000); 
-  }
+  // FORCE mandatory 3-second load time so magenta animation finishes visually
+  setTimeout(() => {
+    if (video.readyState >= 3 || !video.src || video.src === window.location.href) {
+      startGlide();
+    } else {
+      const checkVid = setInterval(() => { if (video.readyState >= 3) { clearInterval(checkVid); startGlide(); } }, 500);
+      setTimeout(() => { clearInterval(checkVid); startGlide(); }, 3000); 
+    }
+  }, 3000); 
 });
 
-// Mini-Player Logic
+// Mini-Player Logic (Ignores Intro Glide)
 const videoContainer = document.getElementById("videoContainer");
 const videoObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
+    if (isIntroGliding) return;
     if (!e.isIntersecting && !video.paused) {
       videoContainer.classList.add("mini-player");
       video.setAttribute("controls", "true");
@@ -136,7 +147,7 @@ const videoObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 videoObserver.observe(document.getElementById("videoSection"));
 
-// Infinite True Loop Carousel (No Rewind)
+// Infinite True Loop Carousel
 const track = document.getElementById("carouselTrack");
 let carTimer;
 

@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <!-- BRIGHT WHITE/MAGENTA LOADING BAR OVERLAY -->
+  <!-- LOADING BAR OVERLAY (TRIGGERS AFTER GO IN) -->
   <div id="entryLoader" class="loading-gate hidden">
     <div class="upload-status-box">
       <div class="spinner-magenta" style="margin-bottom: 25px;"></div>
@@ -21,16 +21,16 @@
     </div>
   </div>
 
-  <!-- ENTRY GATE -->
+  <!-- ENTRY GATE (SEQUENTIAL FADE-IN) -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
-      <h2>Welcome to the media uploader</h2>
+      <h2 class="step-item delay-1">Welcome to the media uploader</h2>
       <div class="steps-list">
-        <p><b>1.</b> Pick a professional pose. If you don't have one, follow the video below to get a <mark>high-quality AI-edited professional image</mark>.</p>
-        <p><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
-        <p><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
+        <p class="step-item delay-1"><b>1.</b> Pick a professional pose. If you don't have one, follow the video below to get a <mark>high-quality AI-edited professional image</mark>.</p>
+        <p class="step-item delay-2"><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
+        <p class="step-item delay-3"><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
       </div>
-      <button id="enterSiteBtn" class="btn-magenta">Go In</button>
+      <button id="enterSiteBtn" class="btn-magenta delay-btn">Go In</button>
     </div>
   </div>
 
@@ -157,20 +157,25 @@
         </div>
       </div>
 
+      <!-- NEW SUCCESS CARD WITH YELLOW EDIT WARNING -->
       <div class="glass-card success-box hidden" id="successCard">
         <div class="success-glyph">
           <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <h2>Media Uploaded</h2>
-        <p>Your file has been secured.</p>
-        <button id="resetBtn" class="btn-secondary" style="margin-top:20px;">Upload Another / Fix Mistake</button>
+        
+        <div class="edit-time-box">
+          You get five minutes to edit if there are any issues.
+        </div>
+        
+        <button id="resetBtn" class="btn-secondary">Edit Submission</button>
       </div>
     </section>
 
-    <!-- LIVE LEADERBOARD -->
+    <!-- UNIFIED STACKED LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
-        <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
           <h3 style="margin: 0;">Upload Leaderboard</h3>
           <div class="live-badge"><span class="live-dot"></span>LIVE</div>
         </div>

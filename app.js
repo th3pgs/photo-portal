@@ -23,11 +23,11 @@ const provider = new GoogleAuthProvider();
 let deadlineDate = null;
 let timerInterval = null;
 let cachedAdmin = false;
-let isIntroGliding = false; // Lock for PiP player
+let isIntroGliding = false; 
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
-// Smooth Scroll Math Curve
+// JS Smooth Scroll Engine
 function smoothScrollToY(endY, duration) {
   const startY = window.scrollY || window.pageYOffset;
   const distance = endY - startY;
@@ -49,7 +49,7 @@ function smoothScrollToY(endY, duration) {
 function showToast(msg, scrollToForm = false) {
   const c = document.getElementById("toastContainer");
   const t = document.createElement("div"); t.className = "glass-toast"; 
-  t.innerHTML = `<span>${msg}</span>`;
+  t.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> <span>${msg}</span>`;
   
   if (scrollToForm) {
     t.onclick = () => {
@@ -72,7 +72,7 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock & 5-Second Glide Sequence
+// Gate Unlock, Loading Screen & 5-Second Glide Sequence
 const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
@@ -95,7 +95,7 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   const startGlide = () => {
     if(hasInitiatedGlide) return;
     hasInitiatedGlide = true;
-    isIntroGliding = true; // Lock PiP
+    isIntroGliding = true; 
     
     window.scrollTo(0, document.body.scrollHeight);
     
@@ -111,7 +111,7 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
           smoothScrollToY(targetY, 2500).then(() => {
             video.currentTime = 0;
             video.play().catch(()=>{});
-            setTimeout(() => { isIntroGliding = false; }, 500); // Unlock PiP
+            setTimeout(() => { isIntroGliding = false; }, 500); 
           });
         } else {
           isIntroGliding = false;
@@ -120,7 +120,6 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
     }, 400);
   };
 
-  // FORCE mandatory 3-second load time so magenta animation finishes visually
   setTimeout(() => {
     if (video.readyState >= 3 || !video.src || video.src === window.location.href) {
       startGlide();
@@ -266,7 +265,6 @@ function startDigitalCountdown() {
   }, 1000);
 }
 
-
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
@@ -289,6 +287,13 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     
     let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : Date.now()) : Date.now();
     const timeText = timeAgo(new Date(tsMillis));
+    
+    let statusHtml = "";
+    if (d.isEditing) {
+      statusHtml = `<span class="editing-text">Editing...</span>`;
+    } else {
+      statusHtml = `${editBtn}<span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>${tickIcon}`;
+    }
 
     const cardHtml = `
       <div class="chess-row">
@@ -298,9 +303,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
           <span class="chess-role">${d.role}</span>
         </div>
         <div class="chess-status">
-          ${editBtn}
-          <span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>
-          ${tickIcon}
+          ${statusHtml}
         </div>
       </div>`;
     
@@ -317,9 +320,13 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
       }
       dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
     }
+    
+    const editingClass = d.isEditing ? "is-editing-admin" : "";
+    const editingBadge = d.isEditing ? `<div class="is-editing-badge">User editing...</div>` : "";
 
     gallery.innerHTML += `
-      <div class="gallery-card" id="gal-${id}">
+      <div class="gallery-card ${editingClass}" id="gal-${id}">
+        ${editingBadge}
         ${imgHtml}
         <div class="gallery-info">
           <h4>${d.firstName} ${d.lastName}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role}</p>
@@ -344,10 +351,18 @@ window.executeDelete = async (id) => {
   } else { showToast("Type 'delete' exactly."); }
 };
 
-window.triggerUserEdit = (f, l, r) => {
+window.triggerUserEdit = async (f, l, r) => {
   document.getElementById("firstName").value = f; document.getElementById("lastName").value = l; document.getElementById("role").value = r;
   document.getElementById("editNotice").classList.remove("hidden"); 
+  
+  document.getElementById("successCard").classList.add("hidden");
+  document.getElementById("formCard").classList.remove("hidden");
+  
   document.getElementById("formCard").scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  try {
+    await setDoc(doc(db, "submissions", myId), { isEditing: true }, { merge: true });
+  } catch(e){}
 };
 
 // Main Upload
@@ -399,10 +414,10 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
 
       await setDoc(doc(db, "submissions", myId), {
         firstName: document.getElementById("firstName").value, lastName: document.getElementById("lastName").value, role: document.getElementById("role").value,
-        imageUrl: finalUrl, isOrganizer: false, time: serverTimestamp()
+        imageUrl: finalUrl, isOrganizer: false, time: serverTimestamp(), isEditing: false
       });
       uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime);
-      document.getElementById("uploadForm").reset(); selectedFile = null;
+      
       document.getElementById("dropzoneContent").innerHTML = `
         <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
         <h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
@@ -410,7 +425,7 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
       document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("reviewContainer").classList.add("hidden");
       document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
       
-      showToast("Submission Recorded! Click here if you need to edit your submission (5m window).", true);
+      showToast("Submission Recorded!", true);
     } else { 
       showToast("Upload failed."); document.getElementById("uploadOverlay").classList.add("hidden");
     }
@@ -418,7 +433,14 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
   xhr.send(fd);
 });
 
-document.getElementById("resetBtn").addEventListener("click", () => { document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("successCard").classList.add("hidden"); document.getElementById("formCard").classList.remove("hidden"); document.getElementById("editNotice").classList.add("hidden"); });
+document.getElementById("resetBtn").addEventListener("click", () => { 
+  document.getElementById("uploadForm").classList.remove("hidden"); 
+  document.getElementById("successCard").classList.add("hidden"); 
+  document.getElementById("formCard").classList.remove("hidden"); 
+  document.getElementById("editNotice").classList.remove("hidden");
+  
+  try { setDoc(doc(db, "submissions", myId), { isEditing: true }, { merge: true }); } catch(e){}
+});
 
 // Admin Login
 let taps = 0, lastTap = 0;
@@ -439,7 +461,7 @@ document.getElementById("closeAdminBtn").addEventListener("click", () => documen
 document.getElementById("tabSettings").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabGallery").classList.remove("active"); document.getElementById("viewSettings").classList.remove("hidden"); document.getElementById("viewGallery").classList.add("hidden"); });
 document.getElementById("tabGallery").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabSettings").classList.remove("active"); document.getElementById("viewGallery").classList.remove("hidden"); document.getElementById("viewSettings").classList.add("hidden"); });
 
-// Strict Desktop Mp4 Formatter for Admin Videos
+// Admin Upload Blocking Overlay
 function adminCloudUploadWithProgress(file, labelTitle) {
   return new Promise((resolve, reject) => {
     document.getElementById("adminUploadOverlay").classList.remove("hidden");
@@ -465,14 +487,7 @@ function adminCloudUploadWithProgress(file, labelTitle) {
       if (xhr.status === 200) {
         const resp = JSON.parse(xhr.responseText);
         let finalUrl = resp.secure_url;
-        
-        if (resp.resource_type === "video") {
-           let parts = finalUrl.split('/upload/');
-           let base = parts[0] + '/upload/f_mp4,vc_h264,q_auto/';
-           let end = parts[1].replace(/\.[^/.]+$/, ".mp4");
-           finalUrl = base + end;
-        }
-        
+        if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,vc_h264,q_auto/");
         resolve(finalUrl);
       }
       else { showToast("Upload failed server-side."); reject("Failed"); }

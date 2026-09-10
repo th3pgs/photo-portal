@@ -26,11 +26,30 @@ let cachedAdmin = false;
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
-// Top Corner Toast with Scroll-to-Edit callback
+// JS Smooth Scroll Animation Engine (Absolute precise timing)
+function smoothScrollToY(endY, duration) {
+  const startY = window.scrollY || window.pageYOffset;
+  const distance = endY - startY;
+  const startTime = performance.now();
+
+  return new Promise(resolve => {
+    function step(time) {
+      let progress = (time - startTime) / duration;
+      if (progress > 1) progress = 1;
+      // easeInOutCubic curve for buttery smooth feeling
+      const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      window.scrollTo(0, startY + distance * ease);
+      if (progress < 1) requestAnimationFrame(step);
+      else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
+
 function showToast(msg, scrollToForm = false) {
   const c = document.getElementById("toastContainer");
   const t = document.createElement("div"); t.className = "glass-toast"; 
-  t.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> <span>${msg}</span>`;
+  t.innerHTML = `<span>${msg}</span>`;
   
   if (scrollToForm) {
     t.onclick = () => {
@@ -53,54 +72,65 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock, Loading Bar & Video Glide Sequence
+// Gate Unlock, Loading Screen & 5-Second Glide Sequence
 const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
-  // If no video is attached, skip the complex loading sequence
-  if (!video.src || video.src === window.location.href) {
-    proceedToSite();
-    return;
-  }
-  
-  // Show Loader
+  // 1. Show Solid Loading Screen & Hide the gate instantly
+  entryGate.style.display = "none"; 
   entryLoader.classList.remove("hidden");
+  
+  // 2. Secretly trigger play/pause to unlock strict browser audio restrictions
   video.muted = false;
   video.volume = 1;
-  
-  let hasPlayed = false;
-  
-  // Start attempting play
   const playPromise = video.play();
   if (playPromise !== undefined) {
-    playPromise.then(() => { if(!hasPlayed) { hasPlayed = true; proceedToSite(); } }).catch(() => {});
+    playPromise.then(() => { video.pause(); video.currentTime = 0; }).catch(() => {});
   }
-  
-  video.addEventListener("playing", () => { if(!hasPlayed) { hasPlayed = true; proceedToSite(); } });
-  
-  // Failsafe timeout in case of extremely slow connection (5s max wait)
-  setTimeout(() => { if(!hasPlayed) { hasPlayed = true; proceedToSite(); } }, 5000);
-});
 
-function proceedToSite() {
-  entryLoader.classList.add("hidden");
-  entryGate.style.opacity = "0"; 
-  setTimeout(() => entryGate.classList.add("hidden"), 400);
-
-  // The Gliding Sequence: Jump bottom -> Glide top -> Glide video
-  window.scrollTo(0, document.body.scrollHeight);
+  // 3. Wait for video to actually buffer so it doesn't fail on play later
+  let hasInitiatedGlide = false;
   
-  setTimeout(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const startGlide = () => {
+    if(hasInitiatedGlide) return;
+    hasInitiatedGlide = true;
     
-    setTimeout(() => {
-      const vidSec = document.getElementById("videoSection");
-      if(vidSec.style.display !== "none") vidSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 800); 
-  }, 50);
-}
+    // Jump instantly to Absolute Bottom
+    window.scrollTo(0, document.body.scrollHeight);
+    
+    // Fade out loader
+    entryLoader.style.opacity = "0";
+    setTimeout(() => { 
+      entryLoader.classList.add("hidden"); 
+      
+      // GLIDE 1: Bottom to Top (2.5 seconds)
+      smoothScrollToY(0, 2500).then(() => {
+        
+        // GLIDE 2: Top to Center of Video (2.5 seconds)
+        const vidSec = document.getElementById("videoSection");
+        if(vidSec.style.display !== "none") {
+          const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
+          
+          smoothScrollToY(targetY, 2500).then(() => {
+            // Sequence Complete. Start full playback.
+            video.currentTime = 0;
+            video.play().catch(()=>{});
+          });
+        }
+      });
+    }, 400);
+  };
+
+  // If video buffers fast, trigger glide. Otherwise failsafe trigger after 3 seconds.
+  if (video.readyState >= 3 || !video.src || video.src === window.location.href) {
+    setTimeout(startGlide, 1000); // Give user 1s to read "Site getting ready..."
+  } else {
+    video.addEventListener("canplay", startGlide);
+    setTimeout(startGlide, 3000); 
+  }
+});
 
 // Mini-Player (Picture-in-Picture) Logic
 const videoContainer = document.getElementById("videoContainer");
@@ -117,8 +147,7 @@ const videoObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 videoObserver.observe(document.getElementById("videoSection"));
 
-
-// Infinite Forward Loop Carousel Logic
+// Infinite True Loop Carousel
 const track = document.getElementById("carouselTrack");
 let carTimer;
 
@@ -171,7 +200,7 @@ function initCarousel() {
   dc.innerHTML = "";
   if(slides.length > 1) {
     slides.forEach((s, i) => {
-      s.dataset.index = i; // Map original positions
+      s.dataset.index = i;
       const d = document.createElement("span"); d.className = "dot";
       if(i===0) d.classList.add("active");
       dc.appendChild(d);
@@ -182,7 +211,6 @@ function initCarousel() {
 
 document.getElementById("carPrev").addEventListener("click", () => { slidePrev(); startCarousel(); });
 document.getElementById("carNext").addEventListener("click", () => { slideNext(); startCarousel(); });
-
 
 // Video Custom Controls
 const ppBtn = document.getElementById("btnPlayPause");
@@ -206,7 +234,6 @@ document.getElementById("btnFwd5").addEventListener("click", () => video.current
 video.addEventListener("timeupdate", () => seek.value = (100 / video.duration) * video.currentTime || 0);
 seek.addEventListener("input", () => video.currentTime = video.duration * (seek.value / 100));
 vol.addEventListener("input", () => video.volume = vol.value);
-
 
 // DB Sync Config
 onSnapshot(doc(db, "config", "settings"), (snap) => {
@@ -233,7 +260,6 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
   }
 });
 
-
 // Squid Game Digital Money Clock
 function startDigitalCountdown() {
   if (timerInterval) clearInterval(timerInterval);
@@ -258,9 +284,7 @@ function startDigitalCountdown() {
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
-const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-
-// Unified Leaderboard (No Dividers)
+// Unified Leaderboard (No SVGs)
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -288,7 +312,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         <div class="chess-status">
           ${editBtn}
           <span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>
-          ${tickIcon}
         </div>
       </div>`;
     
@@ -345,7 +368,7 @@ fileInput.addEventListener("change", (e) => {
   if (e.target.files[0]) {
     selectedFile = e.target.files[0];
     document.getElementById("dropzoneContent").innerHTML = `
-      <svg class="icon-svg" style="width:48px;height:48px;color:#10b981;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <svg class="icon-svg" style="width:40px;height:40px;color:#10b981;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
       <h3 style="color:#10b981;">${selectedFile.name}</h3><small>Ready for review</small>`;
   }
 });
@@ -427,7 +450,7 @@ document.getElementById("closeAdminBtn").addEventListener("click", () => documen
 document.getElementById("tabSettings").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabGallery").classList.remove("active"); document.getElementById("viewSettings").classList.remove("hidden"); document.getElementById("viewGallery").classList.add("hidden"); });
 document.getElementById("tabGallery").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabSettings").classList.remove("active"); document.getElementById("viewGallery").classList.remove("hidden"); document.getElementById("viewSettings").classList.add("hidden"); });
 
-// Admin Upload Blocking Overlay
+// Strict Desktop Mp4 Formatter for Admin Videos
 function adminCloudUploadWithProgress(file, labelTitle) {
   return new Promise((resolve, reject) => {
     document.getElementById("adminUploadOverlay").classList.remove("hidden");
@@ -453,7 +476,15 @@ function adminCloudUploadWithProgress(file, labelTitle) {
       if (xhr.status === 200) {
         const resp = JSON.parse(xhr.responseText);
         let finalUrl = resp.secure_url;
-        if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,q_auto/");
+        
+        // This physically recodes mobile HEVC/MOV into desktop-ready H264 MP4
+        if (resp.resource_type === "video") {
+           let parts = finalUrl.split('/upload/');
+           let base = parts[0] + '/upload/f_mp4,vc_h264,q_auto/';
+           let end = parts[1].replace(/\.[^/.]+$/, ".mp4");
+           finalUrl = base + end;
+        }
+        
         resolve(finalUrl);
       }
       else { showToast("Upload failed server-side."); reject("Failed"); }

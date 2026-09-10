@@ -12,14 +12,14 @@
 </head>
 <body>
 
-  <!-- ENTRY GATE -->
+  <!-- PROPERLY BLURRED ENTRY GATE -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
       <h2>Welcome to the media uploader</h2>
       <div class="steps-list">
-        <p><b>1. Follow the video and get a good AI generated image.</b></p>
-        <p><b>2. Pick the highest quality image.</b></p>
-        <p><b>3. Enter your correct information (First name, Last name, and your genuine role) and hit upload.</b></p>
+        <p><b>1.</b> Pick a professional pose. If you don't have one, follow the video below to get a <mark>high-quality AI-edited professional image</mark>.</p>
+        <p><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
+        <p><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
       </div>
       <button id="enterSiteBtn" class="btn-glow">Go In</button>
     </div>
@@ -30,33 +30,30 @@
   <!-- MAIN VIEWPORT -->
   <main class="main-wrapper" id="mainApp">
     
-    <!-- DIGITAL NEON CLOCK -->
+    <!-- PURE NEON RED CLOCK -->
     <header class="hero-timer">
       <h3 class="timer-title">UPLOAD BEFORE</h3>
       <div id="countdown" class="digital-neon-clock">00:00:00</div>
       <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
-    <!-- PREVIEWS (INSTAGRAM STYLE CAROUSEL) -->
+    <!-- PREVIEWS (BORDERLESS INSTAGRAM CAROUSEL) -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
         <div class="style-note">
-          <span style="font-size: 1.2rem;">💡</span>
-          <p>This shows the desired style and lighting. Make sure you pick a picture that perfectly complements this aesthetic.</p>
+          <p><b>* Note:</b> This is how it's going to look like. Make sure to get a good image that looks like this, either by uploading a high-quality good image that you have, or an AI-generated one using the method described in the video.</p>
         </div>
       </div>
-      <div class="carousel-container">
-        <button class="car-btn" id="carPrev">❮</button>
+      
+      <div class="carousel-wrapper">
         <div class="carousel-track" id="carouselTrack">
-          <div class="car-slide-wrapper" id="ref1Wrap" style="display: none;">
-            <img id="ref1" src="" alt="Reference 1" class="car-slide" />
-          </div>
-          <div class="car-slide-wrapper" id="ref2Wrap" style="display: none;">
-            <img id="ref2" src="" alt="Reference 2" class="car-slide" />
-          </div>
+          <img id="ref1" src="" alt="Reference 1" class="car-slide" style="display: none;" />
+          <img id="ref2" src="" alt="Reference 2" class="car-slide" style="display: none;" />
         </div>
-        <button class="car-btn" id="carNext">❯</button>
+        <div class="carousel-dots" id="carouselDots">
+          <!-- Dots injected via JS -->
+        </div>
       </div>
     </section>
 
@@ -90,10 +87,12 @@
             <div class="field-item">
               <label>First Name</label>
               <input type="text" id="firstName" placeholder="Elon" required autocomplete="off" />
+              <small class="input-note">* This name will appear in a larger font size.</small>
             </div>
             <div class="field-item">
               <label>Last Name</label>
               <input type="text" id="lastName" placeholder="Musk" required autocomplete="off" />
+              <small class="input-note">* This name will appear smaller, directly below your first name.</small>
             </div>
           </div>
           <div class="field-item">
@@ -139,7 +138,7 @@
       </div>
     </section>
 
-    <!-- LEADERBOARD (UNCOMPRESSED) -->
+    <!-- LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
         <h3>Upload Leaderboard</h3>
@@ -147,8 +146,14 @@
       </div>
       
       <div class="chess-board">
+        <!-- Already Uploaded / Organizers -->
+        <div class="leaderboard-group-title">ALREADY UPLOADED</div>
         <div id="organizerList"></div>
+        
         <div class="chess-divider"></div>
+        
+        <!-- Standard Uploads -->
+        <div class="leaderboard-group-title" style="margin-top:10px;">RECENT UPLOADS</div>
         <div id="rosterList"></div>
       </div>
     </section>
@@ -156,52 +161,80 @@
     <footer id="secretTrigger" class="secret-pad"></footer>
   </main>
 
-  <!-- FULLSCREEN ADMIN DASHBOARD -->
+  <!-- BEAUTIFUL ADMIN DASHBOARD -->
   <div id="adminPanel" class="admin-fullscreen hidden">
     <div class="admin-sidebar">
       <h2>Editor Dashboard</h2>
-      <button id="tabSettings" class="admin-tab active">General Settings</button>
+      <button id="tabSettings" class="admin-tab active">System Configuration</button>
       <button id="tabGallery" class="admin-tab">Media Gallery</button>
       <button id="closeAdminBtn" class="btn-close-admin">Exit Dashboard</button>
     </div>
     
     <div class="admin-content">
+      
+      <!-- SETTINGS -->
       <div id="viewSettings" class="admin-view">
-        <div class="admin-block">
-          <label>Set Upload Deadline</label>
-          <input type="datetime-local" id="adminTimer" />
-          <button id="saveTimerBtn" class="btn-admin-action">Update Timer</button>
+        <div class="admin-header">
+          <h3>System Configuration</h3>
+          <p>Manage the timer, instructional video, and styling assets.</p>
         </div>
-        <div class="admin-block">
-          <label>Replace Video Instruction</label>
-          <input type="file" id="adminVideoFile" accept="video/*" />
-          <button id="uploadVideoBtn" class="btn-admin-action">Save Video</button>
-        </div>
-        <div class="admin-block">
-          <label>Replace Preview Pictures</label>
-          <input type="file" id="adminImgFile1" accept="image/*" />
-          <button id="uploadImgBtn1" class="btn-admin-action">Save Picture 1</button>
-          <input type="file" id="adminImgFile2" accept="image/*" style="margin-top: 10px;" />
-          <button id="uploadImgBtn2" class="btn-admin-action">Save Picture 2</button>
-        </div>
-        <div class="admin-block highlight-block">
-          <label>Add Completed Organizers</label>
-          <div class="input-grid">
-            <input type="text" id="seedFirst" placeholder="Elon" />
-            <input type="text" id="seedLast" placeholder="Musk" />
+
+        <div class="admin-card">
+          <h4>Global Deadline Timer</h4>
+          <p>Sets the countdown timer across the site.</p>
+          <div class="admin-row">
+            <input type="datetime-local" id="adminTimer" />
+            <button id="saveTimerBtn" class="btn-admin-action">Update Timer</button>
           </div>
-          <input type="text" id="seedRole" placeholder="Video Editor" style="margin-top: 8px;" />
-          <button id="seedBtn" class="btn-admin-action green-btn">Inject Organizer</button>
+        </div>
+
+        <div class="admin-card">
+          <h4>Instructional Video</h4>
+          <p>Upload a new video to replace the current one.</p>
+          <div class="admin-row">
+            <input type="file" id="adminVideoFile" accept="video/*" />
+            <button id="uploadVideoBtn" class="btn-admin-action">Upload & Save</button>
+            <button id="removeVideoBtn" class="btn-admin-danger">Remove Video</button>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h4>Preview Asset 1</h4>
+          <div class="admin-row">
+            <input type="file" id="adminImgFile1" accept="image/*" />
+            <button id="uploadImgBtn1" class="btn-admin-action">Save Pic 1</button>
+            <button id="removeImgBtn1" class="btn-admin-danger">Remove</button>
+          </div>
+          <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+          <h4>Preview Asset 2</h4>
+          <div class="admin-row">
+            <input type="file" id="adminImgFile2" accept="image/*" />
+            <button id="uploadImgBtn2" class="btn-admin-action">Save Pic 2</button>
+            <button id="removeImgBtn2" class="btn-admin-danger">Remove</button>
+          </div>
+        </div>
+
+        <div class="admin-card highlight-card">
+          <h4>Add "Already Uploaded" User</h4>
+          <p>These entries appear at the very top of the leaderboard without numbers.</p>
+          <div class="input-grid">
+            <input type="text" id="seedFirst" placeholder="First Name (e.g. Elon)" />
+            <input type="text" id="seedLast" placeholder="Last Name (e.g. Musk)" />
+          </div>
+          <input type="text" id="seedRole" placeholder="Role (e.g. Video Editor)" style="margin-top: 8px; width: 100%;" />
+          <button id="seedBtn" class="btn-admin-action green-btn" style="margin-top: 10px; width: 100%;">Add to Leaderboard</button>
         </div>
       </div>
 
+      <!-- MEDIA GALLERY -->
       <div id="viewGallery" class="admin-view hidden">
-        <div class="gallery-header">
+        <div class="admin-header">
           <h3>Media Gallery</h3>
-          <p>Full control over ALL user submissions and organizers.</p>
+          <p>Review, download, or permanently delete user submissions.</p>
         </div>
         <div class="gallery-grid" id="adminGallery"></div>
       </div>
+
     </div>
   </div>
 

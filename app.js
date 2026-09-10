@@ -33,6 +33,16 @@ function showToast(msg) {
 }
 window.showToast = showToast;
 
+// Relative Time Formatter
+function timeAgo(date) {
+  if (!date) return "Just now";
+  const seconds = Math.floor((new Date() - date) / 1000);
+  let int = seconds / 86400; if (int > 1) return Math.floor(int) + " days ago";
+  int = seconds / 3600; if (int > 1) return Math.floor(int) + " hours ago";
+  int = seconds / 60; if (int > 1) return Math.floor(int) + " mins ago";
+  return Math.floor(seconds) + " secs ago";
+}
+
 // Gate
 const entryGate = document.getElementById("entryGate");
 const video = document.getElementById("instructionVideo");
@@ -41,12 +51,34 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   if (video.src) { video.volume = 1; video.play().catch(()=>{}); }
 });
 
-// Carousel Manual Nav
+// Instagram Dots Logic
 const track = document.getElementById("carouselTrack");
-document.getElementById("carPrev").addEventListener("click", () => track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' }));
-document.getElementById("carNext").addEventListener("click", () => track.scrollBy({ left: track.clientWidth, behavior: 'smooth' }));
+const dotsContainer = document.getElementById("carouselDots");
+function updateDots() {
+  const slides = document.querySelectorAll('.car-slide');
+  let visibleCount = 0;
+  slides.forEach(s => { if(s.style.display !== 'none') visibleCount++; });
+  
+  dotsContainer.innerHTML = '';
+  for(let i=0; i<visibleCount; i++) {
+    const d = document.createElement('span'); d.className = 'dot';
+    if(i===0) d.classList.add('active');
+    dotsContainer.appendChild(d);
+  }
+}
 
-// Video
+track.addEventListener("scroll", () => {
+  const scrollPos = track.scrollLeft;
+  const slideWidth = track.clientWidth;
+  const index = Math.round(scrollPos / slideWidth);
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    if (i === index) d.classList.add('active');
+    else d.classList.remove('active');
+  });
+});
+
+// Video Controls
 const ppBtn = document.getElementById("btnPlayPause");
 const seek = document.getElementById("seekSlider");
 const vol = document.getElementById("volumeSlider");
@@ -64,14 +96,21 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
   if (snap.exists()) {
     const d = snap.data();
     if (d.deadline) { deadlineDate = new Date(d.deadline); startDigitalCountdown(); }
+    
     if (d.preview1 || d.preview2) {
       document.getElementById("previewSection").style.display = "block";
-      if (d.preview1) { document.getElementById("ref1").src = d.preview1; document.getElementById("ref1Wrap").style.display = "flex"; }
-      if (d.preview2) { document.getElementById("ref2").src = d.preview2; document.getElementById("ref2Wrap").style.display = "flex"; }
+      if (d.preview1) { document.getElementById("ref1").src = d.preview1; document.getElementById("ref1").style.display = "block"; } else { document.getElementById("ref1").style.display = "none"; }
+      if (d.preview2) { document.getElementById("ref2").src = d.preview2; document.getElementById("ref2").style.display = "block"; } else { document.getElementById("ref2").style.display = "none"; }
+      updateDots();
+    } else {
+      document.getElementById("previewSection").style.display = "none";
     }
+    
     if (d.videoUrl) {
       document.getElementById("videoSection").style.display = "block";
       document.getElementById("videoSource").src = d.videoUrl; video.load();
+    } else {
+      document.getElementById("videoSection").style.display = "none";
     }
   }
 });
@@ -89,13 +128,18 @@ function startDigitalCountdown() {
 
     document.getElementById("countdown").innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
     document.getElementById("timerStatus").textContent = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
+    
+    // Also tick relative timestamps in UI
+    document.querySelectorAll('.time-updater').forEach(el => {
+      if(el.dataset.time) el.innerText = timeAgo(new Date(parseInt(el.dataset.time)));
+    });
   }, 1000);
 }
 
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
-// Leaderboard Sync & FULL Admin Gallery
+// Leaderboard & Admin Sync
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -109,13 +153,18 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const id = docSnap.id;
     const canEdit = (id === myId && (Date.now() - uploadTime) < 300000); 
     const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
+    
+    // Safely parse timestamp
+    let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : Date.now()) : Date.now();
+    const timeHtml = `<div class="chess-time time-updater" data-time="${tsMillis}">${timeAgo(new Date(tsMillis))}</div>`;
 
     const cardHtml = `
       <div class="chess-row">
-        ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : `<div class="chess-rank"><span class="org-badge">ORG</span></div>`}
+        ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
         <div class="chess-details">
           <span class="chess-name">${d.firstName} ${d.lastName}</span>
           <span class="chess-role">${d.role}</span>
+          ${timeHtml}
         </div>
         <div class="chess-status">
           ${editBtn} <span class="chess-tick">✔</span>
@@ -124,18 +173,18 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     
     d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
 
-    // Render ALL Entries in Admin (Image or No Image)
+    // Admin Gallery Cards
     const imgHtml = d.imageUrl ? `<img src="${d.imageUrl}">` : `<div class="no-img-placeholder">Manual Entry (No Photo)</div>`;
-    const saveBtn = d.imageUrl ? `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}')">Save</button>` : '';
+    const dlBtn = d.imageUrl ? `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank', 'noopener,noreferrer')">Download High-Res</button>` : '';
 
     gallery.innerHTML += `
       <div class="gallery-card" id="gal-${id}">
         ${imgHtml}
         <div class="gallery-info">
-          <h4>${d.firstName} ${d.lastName}</h4><p>${d.role}</p>
-          <div style="display:flex; gap:5px; margin-bottom: 10px;">
-            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}')">Copy</button>
-            ${saveBtn}
+          <h4>${d.firstName} ${d.lastName}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role}</p>
+          <div style="display:flex; gap:8px; margin-bottom: 10px;">
+            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}'); showToast('Copied to clipboard!')">Copy Info</button>
+            ${dlBtn}
           </div>
           <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
           <div class="del-req-box hidden" id="delbox-${id}">
@@ -210,7 +259,7 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
 
 document.getElementById("resetBtn").addEventListener("click", () => { document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("successCard").classList.add("hidden"); document.getElementById("editNotice").classList.add("hidden"); });
 
-// Reliable Admin Overlay
+// Admin Overlay
 let taps = 0, lastTap = 0;
 document.getElementById("secretTrigger").addEventListener("click", () => {
   const now = Date.now(); if (now - lastTap < 500) taps++; else taps = 1; lastTap = now;
@@ -234,13 +283,22 @@ async function cloudUpload(file, type="image") {
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${type}/upload`, { method: "POST", body: fd });
   return (await res.json()).secure_url;
 }
+
+// Config Saving & Removals
 document.getElementById("saveTimerBtn").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { deadline: new Date(document.getElementById("adminTimer").value).toISOString() }, { merge: true }); showToast("Timer Updated!"); });
+
 document.getElementById("uploadVideoBtn").addEventListener("click", async () => { const f = document.getElementById("adminVideoFile").files[0]; if (!f) return; showToast("Uploading..."); const url = await cloudUpload(f, "video"); await setDoc(doc(db, "config", "settings"), { videoUrl: url }, { merge: true }); showToast("Video Live!"); });
+document.getElementById("removeVideoBtn").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { videoUrl: "" }, { merge: true }); showToast("Video Removed."); });
+
 document.getElementById("uploadImgBtn1").addEventListener("click", async () => { const f = document.getElementById("adminImgFile1").files[0]; if (!f) return; showToast("Uploading..."); const url = await cloudUpload(f); await setDoc(doc(db, "config", "settings"), { preview1: url }, { merge: true }); showToast("Pic 1 Saved!"); });
+document.getElementById("removeImgBtn1").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview1: "" }, { merge: true }); showToast("Pic 1 Removed."); });
+
 document.getElementById("uploadImgBtn2").addEventListener("click", async () => { const f = document.getElementById("adminImgFile2").files[0]; if (!f) return; showToast("Uploading..."); const url = await cloudUpload(f); await setDoc(doc(db, "config", "settings"), { preview2: url }, { merge: true }); showToast("Pic 2 Saved!"); });
+document.getElementById("removeImgBtn2").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview2: "" }, { merge: true }); showToast("Pic 2 Removed."); });
+
 document.getElementById("seedBtn").addEventListener("click", async () => {
   const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole");
   if (!f.value || !l.value) return;
   await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() });
-  f.value = ""; l.value = ""; r.value = ""; showToast("Organizer added!");
+  f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!");
 });

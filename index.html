@@ -7,7 +7,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Oswald:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -27,29 +27,29 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- MAIN VIEWPORT (Becomes Minimap in Admin Mode) -->
+  <!-- MAIN VIEWPORT -->
   <main class="main-wrapper" id="mainApp">
     
-    <!-- PAPER FLIP CLOCK -->
+    <!-- DIGITAL NEON CLOCK -->
     <header class="hero-timer">
       <h3 class="timer-title">UPLOAD BEFORE</h3>
-      <div class="flip-clock" id="flipClock">
-        <div class="flip-unit"><div class="flip-card" id="hours">00</div><span>HOURS</span></div>
-        <div class="flip-unit"><div class="flip-card" id="minutes">00</div><span>MINS</span></div>
-        <div class="flip-unit"><div class="flip-card" id="seconds">00</div><span>SECS</span></div>
-      </div>
+      <div id="countdown" class="digital-neon-clock">00:00:00</div>
       <p id="timerStatus" class="timer-sub">Calculating time...</p>
     </header>
 
-    <!-- PREVIEWS -->
+    <!-- PREVIEWS (CAROUSEL) -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
         <p class="red-alert"><b>Note:</b> This is how your picture is going to look like. So make sure you pick a picture that perfectly complements this style.</p>
       </div>
-      <div class="preview-grid">
-        <div class="preview-tile"><img id="ref1" src="" alt="Reference 1" /></div>
-        <div class="preview-tile"><img id="ref2" src="" alt="Reference 2" /></div>
+      <div class="carousel-container">
+        <button class="car-btn" id="carPrev">❮</button>
+        <div class="carousel-track" id="carouselTrack">
+          <img id="ref1" src="" alt="Reference 1" class="car-slide" style="display: none;" />
+          <img id="ref2" src="" alt="Reference 2" class="car-slide" style="display: none;" />
+        </div>
+        <button class="car-btn" id="carNext">❯</button>
       </div>
     </section>
 
@@ -81,10 +81,19 @@
         <!-- Step 1: Input -->
         <form id="uploadForm">
           <div class="input-grid">
-            <div class="field-item"><label>First Name</label><input type="text" id="firstName" required autocomplete="off" /></div>
-            <div class="field-item"><label>Last Name</label><input type="text" id="lastName" required autocomplete="off" /></div>
+            <div class="field-item">
+              <label>First Name</label>
+              <input type="text" id="firstName" placeholder="Elon" required autocomplete="off" />
+            </div>
+            <div class="field-item">
+              <label>Last Name</label>
+              <input type="text" id="lastName" placeholder="Musk" required autocomplete="off" />
+            </div>
           </div>
-          <div class="field-item"><label>Project Role</label><input type="text" id="role" required autocomplete="off" /></div>
+          <div class="field-item">
+            <label>Project Role</label>
+            <input type="text" id="role" placeholder="Video Editor" required autocomplete="off" />
+          </div>
           
           <div class="file-dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
             <input type="file" id="fileInput" accept="image/*" style="display:none;" required />
@@ -97,7 +106,7 @@
           <button type="button" id="reviewBtn" class="btn-glow">Review Submission</button>
         </form>
 
-        <!-- Step 2: Review (Hidden initially) -->
+        <!-- Step 2: Review -->
         <div id="reviewContainer" class="hidden review-box">
           <h3>Are you sure about this information?</h3>
           <img id="reviewImage" src="" alt="Preview" class="review-img" />
@@ -126,15 +135,18 @@
       </div>
     </section>
 
-    <!-- LEADERBOARD -->
+    <!-- LEADERBOARD (CHESS.COM STYLE) -->
     <section class="section-container">
       <div class="section-heading flex-between">
         <h3>Upload Leaderboard</h3>
         <span id="rosterCounter" class="counter-badge">0 Uploads</span>
       </div>
-      <div class="roster-wrapper" id="organizerList" style="margin-bottom: 15px;"></div>
-      <hr style="border: 0; border-top: 1px dashed #d1d5db; margin: 15px 0;">
-      <div class="roster-wrapper" id="rosterList"></div>
+      
+      <div class="chess-board">
+        <div id="organizerList"></div>
+        <div class="chess-divider"></div>
+        <div id="rosterList"></div>
+      </div>
     </section>
     
     <footer id="secretTrigger" class="secret-pad"></footer>
@@ -171,10 +183,10 @@
         <div class="admin-block highlight-block">
           <label>Add Completed Organizers</label>
           <div class="input-grid">
-            <input type="text" id="seedFirst" placeholder="First Name" />
-            <input type="text" id="seedLast" placeholder="Last Name" />
+            <input type="text" id="seedFirst" placeholder="Elon" />
+            <input type="text" id="seedLast" placeholder="Musk" />
           </div>
-          <input type="text" id="seedRole" placeholder="Role" style="margin-top: 8px;" />
+          <input type="text" id="seedRole" placeholder="Video Editor" style="margin-top: 8px;" />
           <button id="seedBtn" class="btn-admin-action green-btn">Inject Organizer</button>
         </div>
       </div>

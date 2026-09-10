@@ -33,50 +33,27 @@ function showToast(msg) {
 }
 window.showToast = showToast;
 
-// Relative Time Formatter
 function timeAgo(date) {
   if (!date) return "Just now";
   const seconds = Math.floor((new Date() - date) / 1000);
-  let int = seconds / 86400; if (int > 1) return Math.floor(int) + " days ago";
-  int = seconds / 3600; if (int > 1) return Math.floor(int) + " hours ago";
-  int = seconds / 60; if (int > 1) return Math.floor(int) + " mins ago";
-  return Math.floor(seconds) + " secs ago";
+  let int = seconds / 86400; if (int >= 1) return Math.floor(int) + " days ago";
+  int = seconds / 3600; if (int >= 1) return Math.floor(int) + " hours ago";
+  int = seconds / 60; if (int >= 1) return Math.floor(int) + " mins ago";
+  return "Just now";
 }
 
-// Gate
+// Gate & Video Initialization
 const entryGate = document.getElementById("entryGate");
 const video = document.getElementById("instructionVideo");
+const videoLoader = document.getElementById("videoLoader");
+
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
   entryGate.style.opacity = "0"; setTimeout(() => entryGate.classList.add("hidden"), 400);
-  if (video.src) { video.volume = 1; video.play().catch(()=>{}); }
+  if (video.src && video.src !== window.location.href) { video.volume = 1; video.play().catch(()=>{}); }
 });
 
-// Instagram Dots Logic
-const track = document.getElementById("carouselTrack");
-const dotsContainer = document.getElementById("carouselDots");
-function updateDots() {
-  const slides = document.querySelectorAll('.car-slide');
-  let visibleCount = 0;
-  slides.forEach(s => { if(s.style.display !== 'none') visibleCount++; });
-  
-  dotsContainer.innerHTML = '';
-  for(let i=0; i<visibleCount; i++) {
-    const d = document.createElement('span'); d.className = 'dot';
-    if(i===0) d.classList.add('active');
-    dotsContainer.appendChild(d);
-  }
-}
-
-track.addEventListener("scroll", () => {
-  const scrollPos = track.scrollLeft;
-  const slideWidth = track.clientWidth;
-  const index = Math.round(scrollPos / slideWidth);
-  const dots = document.querySelectorAll('.dot');
-  dots.forEach((d, i) => {
-    if (i === index) d.classList.add('active');
-    else d.classList.remove('active');
-  });
-});
+video.addEventListener('waiting', () => { videoLoader.style.opacity = "1"; });
+video.addEventListener('canplay', () => { videoLoader.style.opacity = "0"; setTimeout(()=> videoLoader.style.display="none", 300); });
 
 // Video Controls
 const ppBtn = document.getElementById("btnPlayPause");
@@ -95,41 +72,46 @@ vol.addEventListener("input", () => video.volume = vol.value);
 onSnapshot(doc(db, "config", "settings"), (snap) => {
   if (snap.exists()) {
     const d = snap.data();
-    if (d.deadline) { deadlineDate = new Date(d.deadline); startDigitalCountdown(); }
+    if (d.deadline) { deadlineDate = new Date(d.deadline); startArtisticTimer(); }
     
+    const track = document.getElementById("carouselTrack");
     if (d.preview1 || d.preview2) {
       document.getElementById("previewSection").style.display = "block";
-      if (d.preview1) { document.getElementById("ref1").src = d.preview1; document.getElementById("ref1").style.display = "block"; } else { document.getElementById("ref1").style.display = "none"; }
-      if (d.preview2) { document.getElementById("ref2").src = d.preview2; document.getElementById("ref2").style.display = "block"; } else { document.getElementById("ref2").style.display = "none"; }
-      updateDots();
+      track.innerHTML = ""; // Clear track
+      
+      let html = "";
+      if (d.preview1) html += `<img src="${d.preview1}" class="car-slide">`;
+      if (d.preview2) html += `<img src="${d.preview2}" class="car-slide">`;
+      
+      // Duplicate for infinite CSS loop
+      track.innerHTML = html + html;
     } else {
       document.getElementById("previewSection").style.display = "none";
     }
     
     if (d.videoUrl) {
       document.getElementById("videoSection").style.display = "block";
-      document.getElementById("videoSource").src = d.videoUrl; video.load();
+      document.getElementById("videoSource").src = d.videoUrl;
+      videoLoader.style.display = "flex"; videoLoader.style.opacity = "1";
+      video.load();
     } else {
       document.getElementById("videoSection").style.display = "none";
     }
   }
 });
 
-// Digital Neon Clock
-function startDigitalCountdown() {
+// Artistic Aurora Timer
+function startArtisticTimer() {
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     if (!deadlineDate) return;
     const diff = deadlineDate.getTime() - Date.now();
     const abs = Math.abs(diff);
-    const h = Math.floor(abs / (1000 * 60 * 60)).toString().padStart(2, "0");
-    const m = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, "0");
-    const s = Math.floor((abs % (1000 * 60)) / 1000).toString().padStart(2, "0");
-
-    document.getElementById("countdown").innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
-    document.getElementById("timerStatus").textContent = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
     
-    // Also tick relative timestamps in UI
+    document.getElementById("t-hours").innerText = Math.floor(abs / (1000 * 60 * 60)).toString().padStart(2, "0");
+    document.getElementById("t-minutes").innerText = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, "0");
+    document.getElementById("t-seconds").innerText = Math.floor((abs % (1000 * 60)) / 1000).toString().padStart(2, "0");
+    
     document.querySelectorAll('.time-updater').forEach(el => {
       if(el.dataset.time) el.innerText = timeAgo(new Date(parseInt(el.dataset.time)));
     });
@@ -139,14 +121,12 @@ function startDigitalCountdown() {
 let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions")).id;
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 
-// Leaderboard & Admin Sync
+// Unified Leaderboard Sync
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
-  const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
   const gallery = document.getElementById("adminGallery");
-  orgList.innerHTML = ""; regList.innerHTML = ""; gallery.innerHTML = "";
+  regList.innerHTML = ""; gallery.innerHTML = "";
   document.getElementById("rosterCounter").textContent = `${snap.size} Uploads`;
-  let rank = 1;
 
   snap.forEach((docSnap) => {
     const d = docSnap.data();
@@ -154,15 +134,13 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const canEdit = (id === myId && (Date.now() - uploadTime) < 300000); 
     const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
     
-    // Safely parse timestamp
     let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : Date.now()) : Date.now();
     const timeHtml = `<div class="chess-time time-updater" data-time="${tsMillis}">${timeAgo(new Date(tsMillis))}</div>`;
 
-    const cardHtml = `
+    regList.innerHTML += `
       <div class="chess-row">
-        ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
         <div class="chess-details">
-          <span class="chess-name">${d.firstName} ${d.lastName}</span>
+          <span class="chess-name">${d.firstName} <span style="font-size:0.9em; font-weight:500;">${d.lastName}</span></span>
           <span class="chess-role">${d.role}</span>
           ${timeHtml}
         </div>
@@ -170,12 +148,10 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
           ${editBtn} <span class="chess-tick">✔</span>
         </div>
       </div>`;
-    
-    d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
 
     // Admin Gallery Cards
     const imgHtml = d.imageUrl ? `<img src="${d.imageUrl}">` : `<div class="no-img-placeholder">Manual Entry (No Photo)</div>`;
-    const dlBtn = d.imageUrl ? `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank', 'noopener,noreferrer')">Download High-Res</button>` : '';
+    const dlBtn = d.imageUrl ? `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download High-Res</button>` : '';
 
     gallery.innerHTML += `
       <div class="gallery-card" id="gal-${id}">
@@ -183,10 +159,10 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         <div class="gallery-info">
           <h4>${d.firstName} ${d.lastName}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role}</p>
           <div style="display:flex; gap:8px; margin-bottom: 10px;">
-            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}'); showToast('Copied to clipboard!')">Copy Info</button>
+            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}'); showToast('Copied!')">Copy Info</button>
             ${dlBtn}
           </div>
-          <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
+          <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Remove Entry</button>
           <div class="del-req-box hidden" id="delbox-${id}">
             <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
             <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
@@ -199,7 +175,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 window.showDeleteConfirm = (id) => document.getElementById(`delbox-${id}`).classList.remove("hidden");
 window.executeDelete = async (id) => {
   if (document.getElementById(`delinput-${id}`).value.toLowerCase() === "delete") {
-    await deleteDoc(doc(db, "submissions", id)); showToast("Deleted.");
+    await deleteDoc(doc(db, "submissions", id)); showToast("Deleted successfully.");
   } else { showToast("Type 'delete' exactly."); }
 };
 
@@ -208,7 +184,7 @@ window.triggerUserEdit = (f, l, r) => {
   document.getElementById("editNotice").classList.remove("hidden"); window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
-// Upload Process
+// Upload Process (With Blocking Overlay)
 let selectedFile = null;
 const fileInput = document.getElementById("fileInput");
 fileInput.addEventListener("change", (e) => {
@@ -222,7 +198,7 @@ document.getElementById("reviewBtn").addEventListener("click", () => {
   const f = document.getElementById("firstName").value.trim(); const l = document.getElementById("lastName").value.trim(); const r = document.getElementById("role").value.trim();
   if (!f || !l || !r || !selectedFile) { showToast("Please fill all fields and select a picture."); return; }
   document.getElementById("uploadForm").classList.add("hidden"); document.getElementById("reviewContainer").classList.remove("hidden");
-  document.getElementById("reviewName").innerText = `${f} ${l}`; document.getElementById("reviewRole").innerText = r;
+  document.getElementById("reviewName").innerHTML = `${f} <span style="font-weight:400; font-size:0.9em;">${l}</span>`; document.getElementById("reviewRole").innerText = r;
   document.getElementById("reviewImage").src = URL.createObjectURL(selectedFile);
 });
 
@@ -231,13 +207,16 @@ document.getElementById("cancelReviewBtn").addEventListener("click", () => {
 });
 
 document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
-  document.getElementById("reviewContainer").classList.add("hidden"); document.getElementById("progressContainer").classList.remove("hidden");
+  document.getElementById("uploadOverlay").classList.remove("hidden");
   const fd = new FormData(); fd.append("file", selectedFile); fd.append("upload_preset", CLOUDINARY_PRESET);
   const xhr = new XMLHttpRequest(); xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+  
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) {
       const p = Math.round((e.loaded / e.total) * 100);
-      document.getElementById("progressBar").style.width = p + "%"; document.getElementById("progressPercent").textContent = p + "%";
+      document.getElementById("progressBar").style.width = p + "%"; 
+      document.getElementById("progressPercent").textContent = p + "%";
+      if (p === 100) document.getElementById("overlayText").innerText = "Securing Assets...";
     }
   };
   xhr.onload = async () => {
@@ -245,19 +224,26 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
       const res = JSON.parse(xhr.responseText);
       await setDoc(doc(db, "submissions", myId), {
         firstName: document.getElementById("firstName").value, lastName: document.getElementById("lastName").value, role: document.getElementById("role").value,
-        imageUrl: res.secure_url, isOrganizer: false, time: serverTimestamp()
+        imageUrl: res.secure_url, time: serverTimestamp()
       });
       uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime);
       document.getElementById("uploadForm").reset(); selectedFile = null;
       document.getElementById("dropzoneContent").innerHTML = `<span style="font-size:2rem">📸</span><h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
-      document.getElementById("progressContainer").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
-      showToast("Got something wrong? You got five minutes to edit.");
-    } else { showToast("Upload failed."); document.getElementById("uploadForm").classList.remove("hidden"); }
+      
+      document.getElementById("uploadOverlay").classList.add("hidden");
+      document.getElementById("reviewContainer").classList.add("hidden");
+      document.getElementById("formCard").classList.add("hidden"); 
+      document.getElementById("successCard").classList.remove("hidden");
+      showToast("Got something wrong? You have five minutes to edit your submission.");
+    } else { 
+      showToast("Upload failed."); 
+      document.getElementById("uploadOverlay").classList.add("hidden");
+    }
   };
   xhr.send(fd);
 });
 
-document.getElementById("resetBtn").addEventListener("click", () => { document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("successCard").classList.add("hidden"); document.getElementById("editNotice").classList.add("hidden"); });
+document.getElementById("resetBtn").addEventListener("click", () => { document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("successCard").classList.add("hidden"); document.getElementById("formCard").classList.remove("hidden"); document.getElementById("editNotice").classList.add("hidden"); });
 
 // Admin Overlay
 let taps = 0, lastTap = 0;
@@ -299,6 +285,6 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => {
   const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole");
   if (!f.value || !l.value) return;
-  await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() });
+  await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, time: serverTimestamp() });
   f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!");
 });

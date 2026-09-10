@@ -7,12 +7,12 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- PROPERLY BLURRED ENTRY GATE -->
+  <!-- ENTRY GATE -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
       <h2>Welcome to the media uploader</h2>
@@ -27,17 +27,24 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- MAIN VIEWPORT -->
   <main class="main-wrapper" id="mainApp">
     
-    <!-- PURE NEON RED CLOCK -->
+    <!-- ARTISTIC AURORA TIMER -->
     <header class="hero-timer">
-      <h3 class="timer-title">UPLOAD BEFORE</h3>
-      <div id="countdown" class="digital-neon-clock">00:00:00</div>
-      <p id="timerStatus" class="timer-sub">Calculating time...</p>
+      <h3 class="timer-title">REMAINING WINDOW</h3>
+      <div class="artistic-clock">
+        <div class="aura-blob"></div>
+        <div class="clock-values">
+          <div class="time-block"><span id="t-hours">00</span><label>hrs</label></div>
+          <span class="colon">:</span>
+          <div class="time-block"><span id="t-minutes">00</span><label>min</label></div>
+          <span class="colon">:</span>
+          <div class="time-block"><span id="t-seconds">00</span><label>sec</label></div>
+        </div>
+      </div>
     </header>
 
-    <!-- PREVIEWS (BORDERLESS INSTAGRAM CAROUSEL) -->
+    <!-- INFINITE LOOP CAROUSEL -->
     <section class="section-container" id="previewSection" style="display: none;">
       <div class="section-heading">
         <h3>How it's going to look like</h3>
@@ -46,22 +53,19 @@
         </div>
       </div>
       
-      <div class="carousel-wrapper">
+      <div class="carousel-wrapper" id="carouselWrapper">
         <div class="carousel-track" id="carouselTrack">
-          <img id="ref1" src="" alt="Reference 1" class="car-slide" style="display: none;" />
-          <img id="ref2" src="" alt="Reference 2" class="car-slide" style="display: none;" />
-        </div>
-        <div class="carousel-dots" id="carouselDots">
-          <!-- Dots injected via JS -->
+          <!-- Images injected & cloned via JS for infinite loop -->
         </div>
       </div>
     </section>
 
-    <!-- VIDEO PLAYER -->
+    <!-- VIDEO PLAYER WITH LOADING STATE -->
     <section class="section-container" id="videoSection" style="display: none;">
       <div class="video-container glass-card">
+        <div id="videoLoader" class="video-loader"><div class="spinner"></div></div>
         <video id="instructionVideo" playsinline preload="auto">
-          <source id="videoSource" src="" type="video/mp4">
+          <source id="videoSource" src="">
         </video>
         <div class="custom-controls">
           <div class="timeline-container"><input type="range" id="seekSlider" class="range-slider" value="0" min="0" max="100" step="0.1"></div>
@@ -77,9 +81,20 @@
       </div>
     </section>
 
-    <!-- UPLOAD FLOW -->
+    <!-- UPLOAD FLOW (WITH BLOCKING PROGRESS) -->
     <section class="section-container">
-      <div class="glass-card form-box" id="formCard">
+      <div class="glass-card form-box relative-box" id="formCard">
+        
+        <!-- BLOCKING UPLOAD OVERLAY -->
+        <div id="uploadOverlay" class="upload-overlay hidden">
+          <div class="upload-status-box">
+            <div class="spinner-large"></div>
+            <h3 id="overlayText">Uploading Asset...</h3>
+            <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
+            <p id="progressPercent">0%</p>
+          </div>
+        </div>
+
         <div id="editNotice" class="edit-badge hidden">Editing Previous Submission</div>
         
         <form id="uploadForm">
@@ -123,22 +138,17 @@
             <button id="confirmSubmitBtn" class="btn-glow confirm-btn">Yes, Upload</button>
           </div>
         </div>
-
-        <div id="progressContainer" class="progress-wrap hidden">
-          <div class="progress-info"><span id="progressText">Uploading to Server...</span><span id="progressPercent">0%</span></div>
-          <div class="progress-bar-bg"><div id="progressBar" class="progress-bar-fill"></div></div>
-        </div>
       </div>
 
       <div class="glass-card success-box hidden" id="successCard">
         <div class="success-glyph">✔</div>
-        <h2>Media Uploaded</h2>
-        <p>Your file has been secured.</p>
-        <button id="resetBtn" class="btn-secondary">Upload Another</button>
+        <h2>Upload Finished</h2>
+        <p>Your file has been secured and uploaded properly.</p>
+        <button id="resetBtn" class="btn-secondary" style="margin-top: 20px;">Upload Another / Fix Mistake</button>
       </div>
     </section>
 
-    <!-- LEADERBOARD -->
+    <!-- UNIFIED LEADERBOARD -->
     <section class="section-container">
       <div class="section-heading flex-between">
         <h3>Upload Leaderboard</h3>
@@ -146,22 +156,16 @@
       </div>
       
       <div class="chess-board">
-        <!-- Already Uploaded / Organizers -->
-        <div class="leaderboard-group-title">ALREADY UPLOADED</div>
-        <div id="organizerList"></div>
-        
-        <div class="chess-divider"></div>
-        
-        <!-- Standard Uploads -->
-        <div class="leaderboard-group-title" style="margin-top:10px;">RECENT UPLOADS</div>
-        <div id="rosterList"></div>
+        <div id="rosterList">
+          <!-- All uploads map here dynamically -->
+        </div>
       </div>
     </section>
     
     <footer id="secretTrigger" class="secret-pad"></footer>
   </main>
 
-  <!-- BEAUTIFUL ADMIN DASHBOARD -->
+  <!-- ADMIN DASHBOARD -->
   <div id="adminPanel" class="admin-fullscreen hidden">
     <div class="admin-sidebar">
       <h2>Editor Dashboard</h2>
@@ -171,33 +175,26 @@
     </div>
     
     <div class="admin-content">
-      
-      <!-- SETTINGS -->
       <div id="viewSettings" class="admin-view">
         <div class="admin-header">
           <h3>System Configuration</h3>
           <p>Manage the timer, instructional video, and styling assets.</p>
         </div>
-
         <div class="admin-card">
           <h4>Global Deadline Timer</h4>
-          <p>Sets the countdown timer across the site.</p>
           <div class="admin-row">
             <input type="datetime-local" id="adminTimer" />
             <button id="saveTimerBtn" class="btn-admin-action">Update Timer</button>
           </div>
         </div>
-
         <div class="admin-card">
           <h4>Instructional Video</h4>
-          <p>Upload a new video to replace the current one.</p>
           <div class="admin-row">
             <input type="file" id="adminVideoFile" accept="video/*" />
             <button id="uploadVideoBtn" class="btn-admin-action">Upload & Save</button>
-            <button id="removeVideoBtn" class="btn-admin-danger">Remove Video</button>
+            <button id="removeVideoBtn" class="btn-admin-danger">Remove</button>
           </div>
         </div>
-
         <div class="admin-card">
           <h4>Preview Asset 1</h4>
           <div class="admin-row">
@@ -213,20 +210,17 @@
             <button id="removeImgBtn2" class="btn-admin-danger">Remove</button>
           </div>
         </div>
-
         <div class="admin-card highlight-card">
-          <h4>Add "Already Uploaded" User</h4>
-          <p>These entries appear at the very top of the leaderboard without numbers.</p>
+          <h4>Add Manual User (No Photo)</h4>
           <div class="input-grid">
-            <input type="text" id="seedFirst" placeholder="First Name (e.g. Elon)" />
-            <input type="text" id="seedLast" placeholder="Last Name (e.g. Musk)" />
+            <input type="text" id="seedFirst" placeholder="First Name" />
+            <input type="text" id="seedLast" placeholder="Last Name" />
           </div>
-          <input type="text" id="seedRole" placeholder="Role (e.g. Video Editor)" style="margin-top: 8px; width: 100%;" />
+          <input type="text" id="seedRole" placeholder="Role" style="margin-top: 8px; width: 100%;" />
           <button id="seedBtn" class="btn-admin-action green-btn" style="margin-top: 10px; width: 100%;">Add to Leaderboard</button>
         </div>
       </div>
 
-      <!-- MEDIA GALLERY -->
       <div id="viewGallery" class="admin-view hidden">
         <div class="admin-header">
           <h3>Media Gallery</h3>
@@ -234,7 +228,6 @@
         </div>
         <div class="gallery-grid" id="adminGallery"></div>
       </div>
-
     </div>
   </div>
 

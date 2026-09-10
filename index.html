@@ -1,115 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editor Asset Portal</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Portal — Asset Drop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <!-- HUGE TIMER -->
-  <header class="timer-container">
-    <p class="timer-title">PROJECT DEADLINE</p>
-    <div id="countdown" class="timer-text">--:--:--</div>
-    <p id="timerStatus" class="timer-subtitle">Loading timer...</p>
-  </header>
-
-  <!-- LEADERBOARD / SUBMISSIONS -->
-  <section class="leaderboard-section">
-    <h2>Live Submissions</h2>
-    <div class="roster-list" id="rosterList">
-      <!-- Names will appear here -->
+  <!-- WELCOME ENTRY MODAL (Unlocks Audio & Focuses User) -->
+  <div id="entryGate" class="entry-gate">
+    <div class="entry-modal glass-card">
+      <div class="entry-badge">PORTAL PROTOCOL</div>
+      <h2>High-Resolution Asset Vault</h2>
+      <p>Submit assets in maximum resolution. Ensure spelling and operational roles are verified prior to transmission.</p>
+      <button id="enterSiteBtn" class="btn-glow">ENTER PORTAL</button>
     </div>
-  </section>
+  </div>
 
-  <!-- PREVIEW IMAGES -->
-  <section class="preview-section" id="previewContainer">
-    <h2>Style References</h2>
-    <div class="preview-grid">
-      <img id="ref1" src="" alt="Reference 1" style="display:none;">
-      <img id="ref2" src="" alt="Reference 2" style="display:none;">
-    </div>
-  </section>
+  <!-- IN-APP TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
 
-  <!-- INSTRUCTIONAL VIDEO -->
-  <section class="video-section" id="videoContainer" style="display:none;">
-    <h2>Instructions</h2>
-    <div class="iframe-wrapper">
-      <iframe id="videoIframe" src="" frameborder="0" allowfullscreen></iframe>
-    </div>
-  </section>
+  <!-- MAIN VIEWPORT -->
+  <main class="main-wrapper">
 
-  <!-- UPLOAD FORM -->
-  <section class="form-section">
-    <div class="card" id="formCard">
-      <h2 id="formTitle">Upload Your Photo</h2>
-      <p id="editNotice" style="display:none; color: #10b981; font-weight: bold; margin-bottom: 10px;">
-        Welcome back! Submitting will overwrite your previous photo.
-      </p>
-      <form id="uploadForm">
-        <div class="input-group">
-          <input type="text" id="firstName" placeholder="First Name" required>
-          <input type="text" id="lastName" placeholder="Last Name" required>
+    <!-- DIGITAL COUNTDOWN HERO -->
+    <header class="hero-timer">
+      <span class="timer-badge"><span class="pulse-dot"></span> LIVE DEADLINE</span>
+      <div class="digital-clock-frame">
+        <div id="countdown" class="digital-clock">00:00:00</div>
+      </div>
+      <p id="timerStatus" class="timer-sub">Synchronizing mission clock...</p>
+    </header>
+
+    <!-- STYLE REFERENCES -->
+    <section class="section-container" id="previewSection" style="display: none;">
+      <div class="section-heading">
+        <h3>VISUAL REFERENCES</h3>
+        <p>Target aesthetic & lighting grading</p>
+      </div>
+      <div class="preview-grid">
+        <div class="preview-tile glass-card">
+          <img id="ref1" src="" alt="Reference 1" />
         </div>
-        <input type="text" id="role" placeholder="Your Position / Role" required style="width: 100%; margin-top: 10px;">
-        
-        <div class="file-upload">
-          <input type="file" id="fileInput" accept="image/*" required>
+        <div class="preview-tile glass-card">
+          <img id="ref2" src="" alt="Reference 2" />
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTRUCTIONAL VIDEO (AUTOPLAY ON SCROLL) -->
+    <section class="section-container" id="videoSection" style="display: none;">
+      <div class="section-heading">
+        <h3>BRIEFING RECORDING</h3>
+        <p>Workflow specifications and asset treatment</p>
+      </div>
+      <div class="video-frame glass-card">
+        <video id="instructionVideo" playsinline preload="auto" controls>
+          <source id="videoSource" src="" type="video/mp4">
+          Your browser does not support high-definition video playback.
+        </video>
+      </div>
+    </section>
+
+    <!-- SUBMISSION / EDIT FORM -->
+    <section class="section-container">
+      <div class="section-heading">
+        <h3>SUBMIT ASSET</h3>
+        <p>Uncompressed source transfer</p>
+      </div>
+
+      <div class="glass-card form-box" id="formCard">
+        <div id="editNotice" class="edit-badge hidden">
+          <span>●</span> Recognized session: Submission will overwrite prior record
         </div>
 
-        <div id="progressContainer" style="display:none; margin-top: 15px;">
-          <div style="background: #e5e7eb; border-radius: 10px; height: 20px; width: 100%;">
-            <div id="progressBar" style="background: #111827; height: 100%; width: 0%; border-radius: 10px; color: white; text-align: center; font-size: 12px; line-height: 20px;">0%</div>
+        <form id="uploadForm">
+          <div class="input-grid">
+            <div class="field-item">
+              <label>FIRST NAME</label>
+              <input type="text" id="firstName" placeholder="Jane" required autocomplete="off" />
+            </div>
+            <div class="field-item">
+              <label>LAST NAME</label>
+              <input type="text" id="lastName" placeholder="Doe" required autocomplete="off" />
+            </div>
           </div>
+
+          <div class="field-item">
+            <label>ASSIGNED ROLE</label>
+            <input type="text" id="role" placeholder="e.g. Lead Motion, Scene 02" required autocomplete="off" />
+          </div>
+
+          <div class="file-dropzone" id="dropZone">
+            <input type="file" id="fileInput" accept="image/*" required />
+            <div class="dropzone-content">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span id="fileNameDisplay">Select Full-Res Source Photo</span>
+              <small>Retains original capture bitrate & pixels</small>
+            </div>
+          </div>
+
+          <!-- UPLOAD TELEMETRY -->
+          <div id="progressContainer" class="progress-wrap hidden">
+            <div class="progress-info">
+              <span id="progressText">Uploading...</span>
+              <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn-glow">SUBMIT ASSET</button>
+        </form>
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div class="glass-card success-box hidden" id="successCard">
+        <div class="success-glyph">✔</div>
+        <h2>Transmission Received</h2>
+        <p>Your contribution has been archived. Production edit sequence is in progress.</p>
+        <button id="resetBtn" class="btn-secondary">Update / Re-upload</button>
+      </div>
+    </section>
+
+    <!-- LIVE LEADERBOARD -->
+    <section class="section-container">
+      <div class="section-heading flex-between">
+        <div>
+          <h3>SUBMISSION ROSTER</h3>
+          <p>Verified deliveries</p>
+        </div>
+        <span id="rosterCounter" class="counter-badge">0 Submissions</span>
+      </div>
+      <div class="roster-wrapper" id="rosterList">
+        <!-- Live data items -->
+      </div>
+    </section>
+
+    <!-- SECRET TRIGGER FOOTER (TRIPLE TAP) -->
+    <footer id="secretTrigger" class="secret-pad"></footer>
+  </main>
+
+  <!-- ADMIN CONTROL CENTER -->
+  <div id="adminPanel" class="admin-panel hidden">
+    <div class="admin-backdrop" id="adminBackdrop"></div>
+    <div class="admin-drawer glass-card">
+      <div class="admin-header">
+        <div>
+          <span class="admin-pill">DIRECTORATE</span>
+          <h2>Flight Control</h2>
+        </div>
+        <button id="closeAdminBtn" class="btn-close">&times;</button>
+      </div>
+
+      <div class="admin-scroller">
+        <!-- DEADLINE CONFIG -->
+        <div class="admin-block">
+          <label>COUNTDOWN TARGET DEADLINE</label>
+          <input type="datetime-local" id="adminTimer" />
+          <button id="saveTimerBtn" class="btn-admin-action">Lock New Time</button>
         </div>
 
-        <button type="submit" id="submitBtn" style="margin-top: 15px;">Send / Upload</button>
-      </form>
+        <!-- VIDEO FILE UPLOAD -->
+        <div class="admin-block">
+          <label>INSTRUCTIONAL BRIEFING VIDEO</label>
+          <input type="file" id="adminVideoFile" accept="video/*" />
+          <button id="uploadVideoBtn" class="btn-admin-action">Upload & Deploy Video</button>
+          <small id="videoUploadStatus" class="status-tip"></small>
+        </div>
+
+        <!-- PREVIEW ASSET UPLOADS -->
+        <div class="admin-block">
+          <label>STYLE REFERENCE ASSET 1</label>
+          <input type="file" id="adminImgFile1" accept="image/*" />
+          <button id="uploadImgBtn1" class="btn-admin-action">Upload Reference 1</button>
+          
+          <label style="margin-top: 15px;">STYLE REFERENCE ASSET 2</label>
+          <input type="file" id="adminImgFile2" accept="image/*" />
+          <button id="uploadImgBtn2" class="btn-admin-action">Upload Reference 2</button>
+          <small id="imgUploadStatus" class="status-tip"></small>
+        </div>
+
+        <!-- SEED CONTRIBUTORS -->
+        <div class="admin-block">
+          <label>MANUAL ROSTER INJECTION</label>
+          <div class="input-grid">
+            <input type="text" id="seedFirst" placeholder="First Name" />
+            <input type="text" id="seedLast" placeholder="Last Name" />
+          </div>
+          <input type="text" id="seedRole" placeholder="Operational Role" style="margin-top: 8px;" />
+          <button id="seedBtn" class="btn-admin-action">Inject Record</button>
+        </div>
+      </div>
     </div>
-
-    <!-- SUCCESS SCREEN -->
-    <div class="card" id="successCard" style="display:none; text-align: center;">
-      <h2 style="color: #10b981;">✔ Photo Uploaded</h2>
-      <p>Thank you for your contribution. The edit will be done soon.</p>
-      <button id="resetBtn" style="margin-top: 15px;">Edit / Upload Again</button>
-    </div>
-  </section>
-
-  <!-- SECRET ADMIN TRIGGER (TRIPLE TAP HERE) -->
-  <footer id="secretTrigger" style="height: 150px; background: white; cursor: default;"></footer>
-
-  <!-- ADMIN PANEL (HIDDEN) -->
-  <div id="adminPanel" style="display:none; position: fixed; top: 0; right: 0; bottom: 0; width: 400px; background: white; box-shadow: -5px 0 15px rgba(0,0,0,0.1); padding: 20px; overflow-y: auto; z-index: 100;">
-    <h2>Editor Dashboard</h2>
-    
-    <label>Target Deadline</label>
-    <input type="datetime-local" id="adminTimer">
-    <button id="saveTimerBtn">Save Timer</button>
-    
-    <hr style="margin: 20px 0;">
-    
-    <label>YouTube Embed Link (Video)</label>
-    <input type="url" id="adminVideo" placeholder="https://www.youtube.com/embed/...">
-    <button id="saveVideoBtn">Save Video</button>
-    
-    <hr style="margin: 20px 0;">
-    
-    <label>Preview Image 1 URL</label>
-    <input type="url" id="adminImg1">
-    <label>Preview Image 2 URL</label>
-    <input type="url" id="adminImg2">
-    <button id="saveImagesBtn">Save Images</button>
-    
-    <hr style="margin: 20px 0;">
-    
-    <h3>Add Starting User (Ticks)</h3>
-    <input type="text" id="seedFirst" placeholder="First Name">
-    <input type="text" id="seedLast" placeholder="Last Name">
-    <input type="text" id="seedRole" placeholder="Role">
-    <button id="seedBtn">Add to Leaderboard</button>
-    
-    <button id="closeAdminBtn" style="margin-top: 40px; background: #ef4444;">Close Dashboard</button>
   </div>
 
   <script type="module" src="app.js"></script>

@@ -349,7 +349,8 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const id = docSnap.id;
     const now = Date.now();
     
-    const editTime = d.editTimestamp || now;
+    // FIX: Using 0 instead of 'now' ensures legacy stuck users instantly trigger the 5-minute timeout.
+    const editTime = d.editTimestamp || 0;
     const isTimeout = d.isEditing && (now - editTime > 300000); 
 
     if (isTimeout && id === myId && d.isEditing) {

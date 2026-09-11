@@ -24,6 +24,7 @@ let deadlineDate = null;
 let timerInterval = null;
 let cachedAdmin = false;
 let isIntroGliding = false; 
+let isVideoPrepping = false; // Prevents icon flashes during the autoplay buffer trick
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
@@ -72,73 +73,95 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock, Loading Screen & Revisit Cache Logic
+// Gate Unlock, Loading Screen & Revisit Logic
 const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
-if (localStorage.getItem("siteVisited") === "true") {
-  entryGate.style.display = "none";
-  entryLoader.classList.add("hidden");
-  isIntroGliding = false;
-  setTimeout(() => {
-    const vidSec = document.getElementById("videoSection");
-    if (vidSec && vidSec.style.display !== "none") {
-      vidSec.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, 500);
-}
-
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
+  const isReturningUser = localStorage.getItem("siteVisited") === "true";
   localStorage.setItem("siteVisited", "true");
+  
   entryGate.style.display = "none"; 
   entryLoader.classList.remove("hidden");
   
+  // Autoplay Prep Trick with UI Shielding
   if (video.src && video.src !== window.location.href) {
+    isVideoPrepping = true; 
+    const ppBtn = document.getElementById("btnPlayPause");
+    if(ppBtn) ppBtn.style.opacity = "0";
+
     video.muted = false;
     video.volume = 1;
     const playPromise = video.play();
     if (playPromise !== undefined) {
-      playPromise.then(() => { video.pause(); video.currentTime = 0; }).catch(() => {});
+      playPromise.then(() => { 
+        video.pause(); 
+        video.currentTime = 0; 
+        isVideoPrepping = false;
+        if(ppBtn) ppBtn.style.opacity = "1";
+      }).catch(() => {
+        isVideoPrepping = false;
+        if(ppBtn) ppBtn.style.opacity = "1";
+      });
+    } else {
+      isVideoPrepping = false;
+      if(ppBtn) ppBtn.style.opacity = "1";
     }
   }
 
   let hasInitiatedGlide = false;
   
-  const startGlide = () => {
+  const startSequence = () => {
     if(hasInitiatedGlide) return;
     hasInitiatedGlide = true;
     isIntroGliding = true; 
     
-    window.scrollTo(0, document.body.scrollHeight);
+    if (!isReturningUser) {
+      window.scrollTo(0, document.body.scrollHeight);
+    } else {
+      const vidSec = document.getElementById("videoSection");
+      if(vidSec && vidSec.style.display !== "none") {
+        const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
+        window.scrollTo(0, targetY);
+      }
+    }
     
     entryLoader.style.opacity = "0";
+    
     setTimeout(() => { 
       entryLoader.classList.add("hidden"); 
       
-      smoothScrollToY(0, 2500).then(() => {
-        const vidSec = document.getElementById("videoSection");
-        if(vidSec.style.display !== "none") {
-          const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
-          
-          smoothScrollToY(targetY, 2500).then(() => {
-            video.currentTime = 0;
-            video.play().catch(()=>{});
-            setTimeout(() => { isIntroGliding = false; }, 500); 
-          });
-        } else {
-          isIntroGliding = false;
-        }
-      });
+      const playVideoFinal = () => {
+        video.currentTime = 0;
+        isVideoPrepping = false; 
+        if(document.getElementById("btnPlayPause")) document.getElementById("btnPlayPause").style.opacity = "1";
+        video.play().catch(()=>{});
+        setTimeout(() => { isIntroGliding = false; }, 500);
+      };
+
+      if (!isReturningUser) {
+        smoothScrollToY(0, 2500).then(() => {
+          const vidSec = document.getElementById("videoSection");
+          if(vidSec.style.display !== "none") {
+            const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
+            smoothScrollToY(targetY, 2500).then(playVideoFinal);
+          } else {
+            isIntroGliding = false;
+          }
+        });
+      } else {
+        playVideoFinal();
+      }
     }, 400);
   };
 
   setTimeout(() => {
     if (video.readyState >= 3 || !video.src || video.src === window.location.href) {
-      startGlide();
+      startSequence();
     } else {
-      const checkVid = setInterval(() => { if (video.readyState >= 3) { clearInterval(checkVid); startGlide(); } }, 500);
-      setTimeout(() => { clearInterval(checkVid); startGlide(); }, 3000); 
+      const checkVid = setInterval(() => { if (video.readyState >= 3) { clearInterval(checkVid); startSequence(); } }, 500);
+      setTimeout(() => { clearInterval(checkVid); startSequence(); }, 3000); 
     }
   }, 3000); 
 });
@@ -217,8 +240,14 @@ ppBtn.addEventListener("click", () => {
     video.pause(); iPause.classList.add("hidden"); iPlay.classList.remove("hidden");
   }
 });
-video.addEventListener("play", () => { iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); });
-video.addEventListener("pause", () => { iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); });
+video.addEventListener("play", () => { 
+  if (isVideoPrepping) return;
+  iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); 
+});
+video.addEventListener("pause", () => { 
+  if (isVideoPrepping) return;
+  iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); 
+});
 
 document.getElementById("btnBack5").addEventListener("click", () => video.currentTime -= 5);
 document.getElementById("btnFwd5").addEventListener("click", () => video.currentTime += 5);
@@ -320,7 +349,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const id = docSnap.id;
     const now = Date.now();
     
-    // Auto-resolve abandoned edits after 5 minutes globally
     const editTime = d.editTimestamp || now;
     const isTimeout = d.isEditing && (now - editTime > 300000); 
 
@@ -446,7 +474,6 @@ document.getElementById("reviewBtn").addEventListener("click", async () => {
   if (!f || !l || !r) { showToast("Please fill all fields."); return; }
   if (!selectedFile && !isEditing) { showToast("Please select a picture."); return; }
 
-  // Fast-track text-only update when editing
   if (isEditing && !selectedFile) {
     document.getElementById("uploadOverlay").classList.remove("hidden");
     document.getElementById("overlayText").innerText = "Saving Edits...";

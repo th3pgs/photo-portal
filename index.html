@@ -59,7 +59,6 @@
       <div class="carousel-container">
         <div class="carousel-viewport">
           <div class="carousel-track" id="carouselTrack">
-            <!-- Slides dynamically managed -->
             <div class="car-slide-wrapper hidden-slide" id="ref1Wrap" data-index="0"><img id="ref1" src="" alt="Reference 1" class="car-slide" /></div>
             <div class="car-slide-wrapper hidden-slide" id="ref2Wrap" data-index="1"><img id="ref2" src="" alt="Reference 2" class="car-slide" /></div>
           </div>
@@ -92,6 +91,58 @@
               <input type="range" id="volumeSlider" class="range-slider vol-slider" value="1" min="0" max="1" step="0.05">
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEW EDITING TOOLS FLOW (ADOBE STYLE) -->
+    <section class="section-container" id="toolsSection" style="display: none;">
+      <div class="section-heading">
+        <h3>How to edit your photo perfectly</h3>
+      </div>
+      <div class="glass-card tools-wrapper">
+        <div class="tools-flow">
+          
+          <!-- Tool Step 1 -->
+          <div class="tool-step">
+            <img id="toolImg1" class="tool-icon" src="" alt="Tool 1 Icon">
+            <h4 id="toolTitle1" class="tool-title">Step 1</h4>
+            <div class="tool-actions">
+              <a id="toolLink1" href="#" target="_blank" class="tool-btn">Open Site</a>
+              <button class="tool-btn tool-copy" onclick="copyToolLink(1)" title="Copy Link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="tool-arrow"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+          
+          <!-- Tool Step 2 -->
+          <div class="tool-step">
+            <img id="toolImg2" class="tool-icon" src="" alt="Tool 2 Icon">
+            <h4 id="toolTitle2" class="tool-title">Step 2</h4>
+            <div class="tool-actions">
+              <a id="toolLink2" href="#" target="_blank" class="tool-btn">Open Site</a>
+              <button class="tool-btn tool-copy" onclick="copyToolLink(2)" title="Copy Link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="tool-arrow"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+          
+          <!-- Tool Step 3 -->
+          <div class="tool-step">
+            <img id="toolImg3" class="tool-icon" src="" alt="Tool 3 Icon">
+            <h4 id="toolTitle3" class="tool-title">Step 3</h4>
+            <div class="tool-actions">
+              <a id="toolLink3" href="#" target="_blank" class="tool-btn">Open Site</a>
+              <button class="tool-btn tool-copy" onclick="copyToolLink(3)" title="Copy Link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -157,7 +208,6 @@
         </div>
       </div>
 
-      <!-- NEW SUCCESS CARD WITH YELLOW EDIT WARNING -->
       <div class="glass-card success-box hidden" id="successCard">
         <div class="success-glyph">
           <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -233,6 +283,52 @@
             <input type="file" id="adminVideoFile" accept="video/*" />
             <button id="uploadVideoBtn" class="btn-admin-action">Upload & Save</button>
             <button id="removeVideoBtn" class="btn-admin-danger">Remove</button>
+          </div>
+        </div>
+
+        <!-- NEW: External Tools Step Configurator -->
+        <div class="admin-card">
+          <h4>Process Steps (External Editing Sites)</h4>
+          
+          <div style="margin-bottom:15px;">
+            <p style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">Step 1 Information</p>
+            <div class="admin-row" style="margin-bottom:8px;">
+              <input type="text" id="adminTool1Title" placeholder="Title (e.g. Remove Background)" style="flex:1" />
+              <input type="text" id="adminTool1Url" placeholder="Site URL" style="flex:2" />
+              <button id="saveTool1TextBtn" class="btn-admin-action">Save Details</button>
+            </div>
+            <div class="admin-row">
+              <input type="file" id="adminTool1Img" accept="image/*" />
+              <button id="uploadTool1ImgBtn" class="btn-admin-action">Upload Icon Image</button>
+            </div>
+          </div>
+          <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+          
+          <div style="margin-bottom:15px;">
+            <p style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">Step 2 Information</p>
+            <div class="admin-row" style="margin-bottom:8px;">
+              <input type="text" id="adminTool2Title" placeholder="Title (e.g. Generate Pose)" style="flex:1" />
+              <input type="text" id="adminTool2Url" placeholder="Site URL" style="flex:2" />
+              <button id="saveTool2TextBtn" class="btn-admin-action">Save Details</button>
+            </div>
+            <div class="admin-row">
+              <input type="file" id="adminTool2Img" accept="image/*" />
+              <button id="uploadTool2ImgBtn" class="btn-admin-action">Upload Icon Image</button>
+            </div>
+          </div>
+          <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+          <div style="margin-bottom:10px;">
+            <p style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">Step 3 Information</p>
+            <div class="admin-row" style="margin-bottom:8px;">
+              <input type="text" id="adminTool3Title" placeholder="Title (e.g. Enhance Image)" style="flex:1" />
+              <input type="text" id="adminTool3Url" placeholder="Site URL" style="flex:2" />
+              <button id="saveTool3TextBtn" class="btn-admin-action">Save Details</button>
+            </div>
+            <div class="admin-row">
+              <input type="file" id="adminTool3Img" accept="image/*" />
+              <button id="uploadTool3ImgBtn" class="btn-admin-action">Upload Icon Image</button>
+            </div>
           </div>
         </div>
 

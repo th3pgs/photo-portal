@@ -213,6 +213,16 @@ video.addEventListener("timeupdate", () => seek.value = (100 / video.duration) *
 seek.addEventListener("input", () => video.currentTime = video.duration * (seek.value / 100));
 vol.addEventListener("input", () => video.volume = vol.value);
 
+// Copy Tool Link Logic
+window.copyToolLink = (num) => {
+  const link = document.getElementById(`toolLink${num}`).href;
+  if (link && link !== window.location.href && !link.endsWith("#")) {
+    navigator.clipboard.writeText(link).then(() => showToast("Site Link Copied!"));
+  } else {
+    showToast("No valid link to copy yet.");
+  }
+};
+
 // DB Sync Config
 onSnapshot(doc(db, "config", "settings"), (snap) => {
   if (snap.exists()) {
@@ -234,6 +244,30 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
       video.src = d.videoUrl;
     } else {
       document.getElementById("videoSection").style.display = "none";
+    }
+
+    // Step-by-Step External Tools Update
+    if (d.tool1Title || d.tool2Title || d.tool3Title) {
+      document.getElementById("toolsSection").style.display = "block";
+      for (let i = 1; i <= 3; i++) {
+        const title = d[`tool${i}Title`];
+        const url = d[`tool${i}Url`];
+        const img = d[`tool${i}Img`];
+        
+        if (title) {
+          document.getElementById(`toolTitle${i}`).innerText = title;
+          document.getElementById(`adminTool${i}Title`).value = title;
+        }
+        if (url) {
+          document.getElementById(`toolLink${i}`).href = url;
+          document.getElementById(`adminTool${i}Url`).value = url;
+        }
+        if (img) {
+          document.getElementById(`toolImg${i}`).src = img;
+        }
+      }
+    } else {
+      document.getElementById("toolsSection").style.display = "none";
     }
   }
 });
@@ -357,7 +391,6 @@ window.triggerUserEdit = async (f, l, r) => {
   document.getElementById("role").value = r;
   document.getElementById("editNotice").classList.remove("hidden"); 
   
-  // FIXED: Unhide the actual upload form and hide review section so it has something to scroll to
   document.getElementById("successCard").classList.add("hidden");
   document.getElementById("formCard").classList.remove("hidden");
   document.getElementById("uploadForm").classList.remove("hidden"); 
@@ -513,6 +546,30 @@ document.getElementById("uploadVideoBtn").addEventListener("click", async () => 
   } catch(e){}
 });
 document.getElementById("removeVideoBtn").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { videoUrl: "" }, { merge: true }); showToast("Video Removed."); });
+
+// External Tool Steps Save Handlers
+const saveToolText = async (step) => {
+  const t = document.getElementById(`adminTool${step}Title`).value;
+  const u = document.getElementById(`adminTool${step}Url`).value;
+  await setDoc(doc(db, "config", "settings"), { [`tool${step}Title`]: t, [`tool${step}Url`]: u }, { merge: true });
+  showToast(`Step ${step} Text Saved!`);
+};
+const saveToolImg = async (step) => {
+  const f = document.getElementById(`adminTool${step}Img`).files[0]; if (!f) return;
+  try {
+    const url = await adminCloudUploadWithProgress(f, `Uploading Step ${step} Icon...`);
+    await setDoc(doc(db, "config", "settings"), { [`tool${step}Img`]: url }, { merge: true });
+    showToast(`Step ${step} Icon Saved!`);
+  } catch(e) {}
+};
+
+document.getElementById("saveTool1TextBtn").addEventListener("click", () => saveToolText(1));
+document.getElementById("uploadTool1ImgBtn").addEventListener("click", () => saveToolImg(1));
+document.getElementById("saveTool2TextBtn").addEventListener("click", () => saveToolText(2));
+document.getElementById("uploadTool2ImgBtn").addEventListener("click", () => saveToolImg(2));
+document.getElementById("saveTool3TextBtn").addEventListener("click", () => saveToolText(3));
+document.getElementById("uploadTool3ImgBtn").addEventListener("click", () => saveToolImg(3));
+
 
 document.getElementById("uploadImgBtn1").addEventListener("click", async () => { 
   const f = document.getElementById("adminImgFile1").files[0]; if (!f) return; 

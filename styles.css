@@ -64,6 +64,42 @@ body { background-color: var(--bg); color: var(--text-main); line-height: 1.5; o
 @keyframes popIn { from { transform: scale(0.8) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 .mini-player .custom-controls { display: none !important; }
 
+/* Horizontal Editing Tools UI (Adobe Style) */
+.tools-wrapper { padding: 1.5rem; }
+.tools-flow { 
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; 
+  flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; 
+}
+/* Hide scrollbar for a cleaner look but still allow swiping on very tiny phones */
+.tools-flow::-webkit-scrollbar { display: none; }
+.tools-flow { -ms-overflow-style: none; scrollbar-width: none; }
+
+.tool-step { 
+  flex: 1; min-width: 130px; display: flex; flex-direction: column; 
+  align-items: center; text-align: center; gap: 12px; 
+}
+.tool-icon { 
+  width: 56px; height: 56px; border-radius: 14px; object-fit: cover; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: white; border: 1px solid var(--border); 
+}
+.tool-title { font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin: 0; line-height: 1.2; }
+.tool-actions { display: flex; gap: 6px; justify-content: center; width: 100%;}
+.tool-btn { 
+  background: var(--text-main); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; 
+  font-size: 0.8rem; font-weight: bold; text-decoration: none; cursor: pointer; 
+  display: flex; align-items: center; justify-content: center; transition: 0.2s; 
+}
+.tool-btn svg { width: 14px; height: 14px; }
+.tool-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+.tool-copy { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); padding: 8px; }
+.tool-copy:hover { background: #e2e8f0; box-shadow: none; transform: none; }
+.tool-arrow { flex-shrink: 0; color: #94a3b8; }
+
+@media (max-width: 500px) {
+  .tools-flow { justify-content: flex-start; }
+  .tool-step { min-width: 140px; }
+}
+
 /* File Dropzone */
 .file-dropzone { border: 2px dashed #cbd5e1; border-radius: 16px; padding: 3rem 1rem; text-align: center; cursor: pointer; background: #f8fafc; margin-bottom: 1.5rem; transition: all 0.2s; color: var(--text-muted); }
 .file-dropzone:hover { background: #f1f5f9; border-color: var(--text-main); color: var(--text-main); }
@@ -167,7 +203,7 @@ input[type="text"]:focus { border-color: var(--text-main); box-shadow: 0 0 0 3px
 .admin-header h3 { font-size: 1.5rem; margin-bottom: 5px; }
 .admin-header p { color: #64748b; margin-bottom: 30px; }
 .admin-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; max-width: 650px; }
-.admin-card h4 { font-size: 1rem; margin-bottom: 5px; }
+.admin-card h4 { font-size: 1rem; margin-bottom: 15px; }
 .admin-row { display: flex; gap: 10px; align-items: center; }
 .highlight-card { background: #f0fdf4; border-color: #bbf7d0; }
 .btn-admin-action { background: #f1f5f9; border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }

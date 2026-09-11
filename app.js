@@ -72,12 +72,25 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock, Loading Screen & 5-Second Glide Sequence
+// Gate Unlock, Loading Screen & Revisit Cache Logic
 const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
+if (localStorage.getItem("siteVisited") === "true") {
+  entryGate.style.display = "none";
+  entryLoader.classList.add("hidden");
+  isIntroGliding = false;
+  setTimeout(() => {
+    const vidSec = document.getElementById("videoSection");
+    if (vidSec && vidSec.style.display !== "none") {
+      vidSec.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, 500);
+}
+
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
+  localStorage.setItem("siteVisited", "true");
   entryGate.style.display = "none"; 
   entryLoader.classList.remove("hidden");
   
@@ -130,7 +143,7 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   }, 3000); 
 });
 
-// Mini-Player Logic (Ignores Intro Glide)
+// Mini-Player Logic
 const videoContainer = document.getElementById("videoContainer");
 const videoObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
@@ -146,7 +159,7 @@ const videoObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 videoObserver.observe(document.getElementById("videoSection"));
 
-// Infinite True Loop Carousel
+// Carousel
 const track = document.getElementById("carouselTrack");
 let carTimer;
 
@@ -190,7 +203,7 @@ function initCarousel() {
   }
 }
 
-// Video Custom Controls
+// Custom Controls
 const ppBtn = document.getElementById("btnPlayPause");
 const seek = document.getElementById("seekSlider");
 const vol = document.getElementById("volumeSlider");
@@ -213,7 +226,6 @@ video.addEventListener("timeupdate", () => seek.value = (100 / video.duration) *
 seek.addEventListener("input", () => video.currentTime = video.duration * (seek.value / 100));
 vol.addEventListener("input", () => video.volume = vol.value);
 
-// Copy Tool Link Logic
 window.copyToolLink = (num) => {
   const link = document.getElementById(`toolLink${num}`).href;
   if (link && link !== window.location.href && !link.endsWith("#")) {
@@ -223,7 +235,7 @@ window.copyToolLink = (num) => {
   }
 };
 
-// DB Sync Config
+// Config Sync
 onSnapshot(doc(db, "config", "settings"), (snap) => {
   if (snap.exists()) {
     const d = snap.data();
@@ -246,7 +258,6 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
       document.getElementById("videoSection").style.display = "none";
     }
 
-    // Step-by-Step External Tools Update
     if (d.tool1Title || d.tool2Title || d.tool3Title) {
       document.getElementById("toolsSection").style.display = "block";
       for (let i = 1; i <= 3; i++) {
@@ -254,17 +265,9 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
         const url = d[`tool${i}Url`];
         const img = d[`tool${i}Img`];
         
-        if (title) {
-          document.getElementById(`toolTitle${i}`).innerText = title;
-          document.getElementById(`adminTool${i}Title`).value = title;
-        }
-        if (url) {
-          document.getElementById(`toolLink${i}`).href = url;
-          document.getElementById(`adminTool${i}Url`).value = url;
-        }
-        if (img) {
-          document.getElementById(`toolImg${i}`).src = img;
-        }
+        if (title) { document.getElementById(`toolTitle${i}`).innerText = title; document.getElementById(`adminTool${i}Title`).value = title; }
+        if (url) { document.getElementById(`toolLink${i}`).href = url; document.getElementById(`adminTool${i}Url`).value = url; }
+        if (img) { document.getElementById(`toolImg${i}`).src = img; }
       }
     } else {
       document.getElementById("toolsSection").style.display = "none";
@@ -272,7 +275,6 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
   }
 });
 
-// Squid Game Digital Money Clock with Animated Dots
 let dotCount = 1;
 setInterval(() => {
   dotCount = (dotCount % 3) + 1;
@@ -304,7 +306,7 @@ let uploadTime = localStorage.getItem("mySubTime") || 0;
 
 const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
-// Unified Leaderboard 
+// Unified Leaderboard with 5-Min Edit Timeout Lock
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -316,14 +318,26 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   snap.forEach((docSnap) => {
     const d = docSnap.data();
     const id = docSnap.id;
-    const canEdit = (id === myId && (Date.now() - uploadTime) < 300000); 
+    const now = Date.now();
+    
+    // Auto-resolve abandoned edits after 5 minutes globally
+    const editTime = d.editTimestamp || now;
+    const isTimeout = d.isEditing && (now - editTime > 300000); 
+
+    if (isTimeout && id === myId && d.isEditing) {
+      setDoc(doc(db, "submissions", myId), { isEditing: false }, { merge: true });
+      localStorage.removeItem("isEditingLocal");
+      d.isEditing = false;
+    }
+
+    const canEdit = (id === myId && (now - uploadTime) < 300000); 
     const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
     
-    let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : Date.now()) : Date.now();
+    let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : now) : now;
     const timeText = timeAgo(new Date(tsMillis));
     
     let statusHtml = "";
-    if (d.isEditing) {
+    if (d.isEditing && !isTimeout) {
       statusHtml = `<span class="editing-text">Editing...</span>`;
     } else {
       statusHtml = `${editBtn}<span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>${tickIcon}`;
@@ -343,7 +357,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     
     d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
 
-    // Admin Gallery
     let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`;
     let dlBtn = '';
     if (d.imageUrl) {
@@ -355,8 +368,8 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
       dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
     }
     
-    const editingClass = d.isEditing ? "is-editing-admin" : "";
-    const editingBadge = d.isEditing ? `<div class="is-editing-badge">User editing...</div>` : "";
+    const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
+    const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
 
     gallery.innerHTML += `
       <div class="gallery-card ${editingClass}" id="gal-${id}">
@@ -386,11 +399,20 @@ window.executeDelete = async (id) => {
 };
 
 window.triggerUserEdit = async (f, l, r) => {
+  const proceed = confirm("Notice: Only press Edit if you made a mistake.\n\nTo edit: Make your changes below, then press the 'Confirm Edit' button to save. Continue?");
+  if (!proceed) return;
+
+  localStorage.setItem("isEditingLocal", "true");
+
   document.getElementById("firstName").value = f; 
   document.getElementById("lastName").value = l; 
   document.getElementById("role").value = r;
   document.getElementById("editNotice").classList.remove("hidden"); 
   
+  const revBtn = document.getElementById("reviewBtn");
+  revBtn.innerText = "Confirm Edit";
+  revBtn.classList.add("shake-constant");
+
   document.getElementById("successCard").classList.add("hidden");
   document.getElementById("formCard").classList.remove("hidden");
   document.getElementById("uploadForm").classList.remove("hidden"); 
@@ -399,7 +421,7 @@ window.triggerUserEdit = async (f, l, r) => {
   document.getElementById("formCard").scrollIntoView({ behavior: 'smooth', block: 'center' });
   
   try {
-    await setDoc(doc(db, "submissions", myId), { isEditing: true }, { merge: true });
+    await setDoc(doc(db, "submissions", myId), { isEditing: true, editTimestamp: Date.now() }, { merge: true });
   } catch(e){}
 };
 
@@ -415,18 +437,50 @@ fileInput.addEventListener("change", (e) => {
   }
 });
 
-document.getElementById("reviewBtn").addEventListener("click", () => {
-  const f = document.getElementById("firstName").value.trim(); const l = document.getElementById("lastName").value.trim(); const r = document.getElementById("role").value.trim();
-  if (!f || !l || !r || !selectedFile) { showToast("Please fill all fields and select a picture."); return; }
-  document.getElementById("uploadForm").classList.add("hidden"); document.getElementById("reviewContainer").classList.remove("hidden");
-  document.getElementById("reviewName").innerHTML = `${f} <span style="font-weight:400; font-size:0.9em;">${l}</span>`; document.getElementById("reviewRole").innerText = r;
+document.getElementById("reviewBtn").addEventListener("click", async () => {
+  const f = document.getElementById("firstName").value.trim(); 
+  const l = document.getElementById("lastName").value.trim(); 
+  const r = document.getElementById("role").value.trim();
+  const isEditing = localStorage.getItem("isEditingLocal") === "true";
+
+  if (!f || !l || !r) { showToast("Please fill all fields."); return; }
+  if (!selectedFile && !isEditing) { showToast("Please select a picture."); return; }
+
+  // Fast-track text-only update when editing
+  if (isEditing && !selectedFile) {
+    document.getElementById("uploadOverlay").classList.remove("hidden");
+    document.getElementById("overlayText").innerText = "Saving Edits...";
+    
+    await setDoc(doc(db, "submissions", myId), {
+      firstName: f, lastName: l, role: r, isEditing: false
+    }, { merge: true });
+
+    localStorage.removeItem("isEditingLocal");
+    const revBtn = document.getElementById("reviewBtn");
+    revBtn.innerText = "Review Submission";
+    revBtn.classList.remove("shake-constant");
+
+    document.getElementById("uploadOverlay").classList.add("hidden");
+    document.getElementById("formCard").classList.add("hidden");
+    document.getElementById("successCard").classList.remove("hidden");
+    showToast("Edits Saved!", true);
+    return;
+  }
+
+  document.getElementById("uploadForm").classList.add("hidden"); 
+  document.getElementById("reviewContainer").classList.remove("hidden");
+  document.getElementById("reviewName").innerHTML = `${f} <span style="font-weight:400; font-size:0.9em;">${l}</span>`; 
+  document.getElementById("reviewRole").innerText = r;
   
-  if (selectedFile.type.includes("video")) { document.getElementById("reviewImage").style.display = "none"; } 
-  else { document.getElementById("reviewImage").style.display = "block"; document.getElementById("reviewImage").src = URL.createObjectURL(selectedFile); }
+  if (selectedFile) {
+    if (selectedFile.type.includes("video")) { document.getElementById("reviewImage").style.display = "none"; } 
+    else { document.getElementById("reviewImage").style.display = "block"; document.getElementById("reviewImage").src = URL.createObjectURL(selectedFile); }
+  }
 });
 
 document.getElementById("cancelReviewBtn").addEventListener("click", () => {
-  document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("reviewContainer").classList.add("hidden");
+  document.getElementById("uploadForm").classList.remove("hidden"); 
+  document.getElementById("reviewContainer").classList.add("hidden");
 });
 
 document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
@@ -450,12 +504,31 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
       let finalUrl = resp.secure_url;
       if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,q_auto/");
 
-      await setDoc(doc(db, "submissions", myId), {
-        firstName: document.getElementById("firstName").value, lastName: document.getElementById("lastName").value, role: document.getElementById("role").value,
-        imageUrl: finalUrl, isOrganizer: false, time: serverTimestamp(), isEditing: false
-      });
-      uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime);
+      const isEditing = localStorage.getItem("isEditingLocal") === "true";
+      const payload = {
+        firstName: document.getElementById("firstName").value, 
+        lastName: document.getElementById("lastName").value, 
+        role: document.getElementById("role").value,
+        imageUrl: finalUrl, 
+        isOrganizer: false, 
+        isEditing: false
+      };
       
+      if (!isEditing) payload.time = serverTimestamp();
+
+      await setDoc(doc(db, "submissions", myId), payload, { merge: true });
+      
+      if (!isEditing) {
+        uploadTime = Date.now(); 
+        localStorage.setItem("mySubId", myId); 
+        localStorage.setItem("mySubTime", uploadTime);
+      }
+      
+      localStorage.removeItem("isEditingLocal");
+      const revBtn = document.getElementById("reviewBtn");
+      revBtn.innerText = "Review Submission";
+      revBtn.classList.remove("shake-constant");
+
       document.getElementById("dropzoneContent").innerHTML = `
         <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
         <h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
@@ -463,7 +536,7 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
       document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("reviewContainer").classList.add("hidden");
       document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
       
-      showToast("Submission Recorded!", true);
+      showToast(isEditing ? "Update Recorded!" : "Submission Recorded!", true);
     } else { 
       showToast("Upload failed."); document.getElementById("uploadOverlay").classList.add("hidden");
     }
@@ -472,15 +545,14 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => { 
-  document.getElementById("uploadForm").classList.remove("hidden"); 
-  document.getElementById("successCard").classList.add("hidden"); 
-  document.getElementById("formCard").classList.remove("hidden"); 
-  document.getElementById("editNotice").classList.remove("hidden");
-  
-  try { setDoc(doc(db, "submissions", myId), { isEditing: true }, { merge: true }); } catch(e){}
+  triggerUserEdit(
+    document.getElementById("firstName").value,
+    document.getElementById("lastName").value,
+    document.getElementById("role").value
+  );
 });
 
-// Admin Login
+// Admin Logic
 let taps = 0, lastTap = 0;
 document.getElementById("secretTrigger").addEventListener("click", () => {
   const now = Date.now(); if (now - lastTap < 500) taps++; else taps = 1; lastTap = now;
@@ -499,7 +571,6 @@ document.getElementById("closeAdminBtn").addEventListener("click", () => documen
 document.getElementById("tabSettings").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabGallery").classList.remove("active"); document.getElementById("viewSettings").classList.remove("hidden"); document.getElementById("viewGallery").classList.add("hidden"); });
 document.getElementById("tabGallery").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabSettings").classList.remove("active"); document.getElementById("viewGallery").classList.remove("hidden"); document.getElementById("viewSettings").classList.add("hidden"); });
 
-// Admin Upload Blocking Overlay
 function adminCloudUploadWithProgress(file, labelTitle) {
   return new Promise((resolve, reject) => {
     document.getElementById("adminUploadOverlay").classList.remove("hidden");
@@ -547,7 +618,6 @@ document.getElementById("uploadVideoBtn").addEventListener("click", async () => 
 });
 document.getElementById("removeVideoBtn").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { videoUrl: "" }, { merge: true }); showToast("Video Removed."); });
 
-// External Tool Steps Save Handlers
 const saveToolText = async (step) => {
   const t = document.getElementById(`adminTool${step}Title`).value;
   const u = document.getElementById(`adminTool${step}Url`).value;
@@ -569,7 +639,6 @@ document.getElementById("saveTool2TextBtn").addEventListener("click", () => save
 document.getElementById("uploadTool2ImgBtn").addEventListener("click", () => saveToolImg(2));
 document.getElementById("saveTool3TextBtn").addEventListener("click", () => saveToolText(3));
 document.getElementById("uploadTool3ImgBtn").addEventListener("click", () => saveToolImg(3));
-
 
 document.getElementById("uploadImgBtn1").addEventListener("click", async () => { 
   const f = document.getElementById("adminImgFile1").files[0]; if (!f) return; 

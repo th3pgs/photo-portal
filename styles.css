@@ -253,3 +253,17 @@ mark { background: #fef08a; color: #0f172a; padding: 2px 6px; border-radius: 4px
 .delay-btn { opacity: 0; transform: translateY(20px); animation: fadeUp 0.6s ease forwards 2.4s, attentionShake 4s infinite 3s; }
 
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+/* Persistent Shake Animation for Edit Confirmation */
+@keyframes constantShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.shake-constant {
+  animation: constantShake 0.4s infinite alternate !important;
+  background-color: var(--accent-red) !important;
+  box-shadow: 0 0 15px rgba(255, 0, 60, 0.4) !important;
+  color: #ffffff !important;
+}

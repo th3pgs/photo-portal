@@ -460,7 +460,8 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
-// RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PER-POST UI & EXACT FIT ALIGNMENT
+// RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PER-POST UI 
+// DANMAKU MIDDLE-SCREEN LIVE STREAM & COUNTERS
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -499,9 +500,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV14")) {
+    if (!localStorage.getItem("shortsOnboardingV16")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV14")) {
+        if (!localStorage.getItem("shortsOnboardingV16")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -511,8 +512,8 @@ seeResultsBtn.addEventListener("click", () => {
 
 let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV14")) {
-    localStorage.setItem("shortsOnboardingV14", "true");
+  if (!localStorage.getItem("shortsOnboardingV16")) {
+    localStorage.setItem("shortsOnboardingV16", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -609,10 +610,11 @@ function buildResultsCarousel() {
       <div class="shorts-action-bar">
         <button class="action-btn like-btn" data-id="${sub.id}" data-idx="${idx}">
           <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none" class="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-          <span class="like-counter" id="like-count-${idx}">${sub.likes || 0}</span>
+          <span class="action-counter" id="like-count-${idx}">${sub.likes || 0}</span>
         </button>
         <button class="action-btn comment-trigger-btn" data-id="${sub.id}">
           <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+          <span class="action-counter" id="comment-count-${idx}">0</span>
         </button>
       </div>
 
@@ -624,8 +626,6 @@ function buildResultsCarousel() {
           Download Result
         </button>
       </div>
-
-      <div class="live-comments-stream" id="stream-${idx}"></div>
     `;
     
     resultsViewport.appendChild(slide);
@@ -723,12 +723,14 @@ function listenToLikes(submissionId, domIdx) {
 
 function listenToLiveFloatingComments(submissionId, domIdx) {
   if (activeUnsubComments) activeUnsubComments();
-  const streamEl = document.getElementById(`stream-${domIdx}`);
-  if(!streamEl) return;
+  const streamEl = document.getElementById("floatingStream");
   streamEl.innerHTML = ""; 
   
   const commentsRef = collection(db, "submissions", submissionId, "comments");
   activeUnsubComments = onSnapshot(query(commentsRef, orderBy("timestamp", "desc")), (snap) => {
+    const counterEl = document.getElementById(`comment-count-${domIdx}`);
+    if (counterEl) counterEl.innerText = snap.size;
+
     snap.docChanges().forEach(change => {
       if (change.type === "added") {
         const c = change.doc.data();
@@ -738,7 +740,7 @@ function listenToLiveFloatingComments(submissionId, domIdx) {
         const safeText = c.text ? c.text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
         bubble.innerHTML = `<b>${c.name}:</b> ${safeText}`;
         streamEl.prepend(bubble);
-        setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6000);
+        setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 4000);
       }
     });
   });
@@ -855,7 +857,7 @@ document.getElementById("copyPinBtn").addEventListener("click", () => {
   navigator.clipboard.writeText(pin).then(() => showToast("PIN Copied!"));
 });
 
-window.openCommentOptions = (cId, cPin, cText) => {
+function openCommentOptions(cId, cPin, cText) {
   activeCommentActionId = cId;
   activeCommentActionPin = cPin;
   

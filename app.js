@@ -449,19 +449,19 @@ document.getElementById("uploadImgBtn2").addEventListener("click", async () => {
 document.getElementById("removeImgBtn2").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview2: "" }, { merge: true }); showToast("Pic 2 Removed."); });
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
+
 // -------------------------------------------------------------
-// NEW RESULTS LOGIC: YT SHORTS & TINDER STYLE
-// NATIVE VERTICAL SCROLLING WITH INFINITE LOOP
+// NEW RESULTS LOGIC: PER-POST UI & TRUE IMAGE ALIGNMENT
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
 const resultsViewport = document.getElementById("resultsViewport");
 
 let finalizedSubmissions = [];
-let currentResIndex = 0;
 let onboardingTimer = null;
 let activeUnsubComments = null;
 let activeLikesUnsub = null;
+let currentModalSubId = null;
 
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   finalizedSubmissions = [];
@@ -486,9 +486,10 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV3")) {
+    // Cache key forcefully reset to V4 as requested
+    if (!localStorage.getItem("shortsOnboardingV4")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV3")) {
+        if (!localStorage.getItem("shortsOnboardingV4")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -497,8 +498,8 @@ seeResultsBtn.addEventListener("click", () => {
 });
 
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV3")) {
-    localStorage.setItem("shortsOnboardingV3", "true");
+  if (!localStorage.getItem("shortsOnboardingV4")) {
+    localStorage.setItem("shortsOnboardingV4", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -519,7 +520,6 @@ const resObserver = new IntersectionObserver((entries) => {
       const domIdx = parseInt(slide.dataset.index);
       const realIndex = parseInt(slide.dataset.realIndex);
       
-      currentResIndex = realIndex;
       document.getElementById("resultsPagination").innerText = `${realIndex + 1} / ${finalizedSubmissions.length}`;
       
       listenToComments(finalizedSubmissions[realIndex].id, domIdx);
@@ -538,6 +538,7 @@ function buildResultsCarousel() {
   resultsViewport.innerHTML = "";
   
   let slidesToBuild = [...finalizedSubmissions];
+  // Clone the first slide to the end for the infinite scroll illusion
   if (slidesToBuild.length > 1) {
     slidesToBuild.push({...slidesToBuild[0], isClone: true});
   }
@@ -547,21 +548,23 @@ function buildResultsCarousel() {
     slide.className = "result-slide-wrapper" + (sub.isClone ? " is-clone" : "");
     slide.dataset.index = idx;
     slide.dataset.realIndex = sub.isClone ? 0 : idx;
-    slide.id = `slide-${idx}`;
     
+    // Per-slide embedded UI (Ensures everything scrolls naturally with the specific post)
     slide.innerHTML = `
-      <div class="ba-container" id="bacontainer-${idx}">
-        <img src="${sub.finalImageUrl}" class="img-base">
-        <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}">
-        <div class="slider-handle" id="bahandle-${idx}"></div>
+      <div class="ba-container">
+        <div class="ba-image-wrapper" id="bacontainer-${idx}">
+          <img src="${sub.finalImageUrl}" class="img-base">
+          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}">
+          <div class="slider-handle" id="bahandle-${idx}"></div>
+        </div>
       </div>
       
       <div class="shorts-action-bar">
-        <button class="action-btn like-btn" data-id="${sub.id}">
+        <button class="action-btn like-btn" data-id="${sub.id}" data-idx="${idx}">
           <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none" class="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
           <span class="like-counter" id="like-count-${idx}">${sub.likes || 0}</span>
         </button>
-        <button class="action-btn comment-trigger-btn">
+        <button class="action-btn comment-trigger-btn" data-id="${sub.id}">
           <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
         </button>
       </div>
@@ -585,6 +588,7 @@ function buildResultsCarousel() {
   
   resultsViewport.scrollTop = 0;
 
+  // Individual post download bindings
   document.querySelectorAll('.tinder-download-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const url = e.currentTarget.dataset.url;
@@ -601,6 +605,7 @@ function buildResultsCarousel() {
     });
   });
 
+  // Database-connected global like buttons
   document.querySelectorAll('.like-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const subId = e.currentTarget.dataset.id;
@@ -621,7 +626,8 @@ function buildResultsCarousel() {
   });
 
   document.querySelectorAll('.comment-trigger-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      currentModalSubId = e.currentTarget.dataset.id;
       document.getElementById("commentInputOverlay").classList.remove("hidden");
     });
   });
@@ -641,6 +647,7 @@ function initTrueOverlaySlider(idx) {
     if (x < 0) x = 0; if (x > rect.width) x = rect.width;
     const percent = (x / rect.width) * 100;
     
+    // Bounds perfectly to the image wrapper so swiping outside doesn't warp the calculation
     overlayImg.style.clipPath = `polygon(0 0, ${percent}% 0, ${percent}% 100%, 0 100%)`;
     handle.style.left = `${percent}%`;
   };
@@ -690,14 +697,15 @@ const commentInputOverlay = document.getElementById("commentInputOverlay");
 document.getElementById("cancelCommentBtn").addEventListener("click", () => {
   commentInputOverlay.classList.add("hidden");
 });
+
 document.getElementById("submitCommentBtn").addEventListener("click", async () => {
   const name = document.getElementById("commentRealName").value.trim();
   const text = document.getElementById("commentText").value.trim();
   
   if (!name || !text) { showToast("Please fill both name and comment."); return; }
+  if (!currentModalSubId) return;
   
-  const currentData = finalizedSubmissions[currentResIndex];
-  await addDoc(collection(db, "submissions", currentData.id, "comments"), {
+  await addDoc(collection(db, "submissions", currentModalSubId, "comments"), {
     name: name,
     text: text,
     timestamp: serverTimestamp()

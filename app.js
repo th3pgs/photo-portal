@@ -460,8 +460,7 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
-// NEW RESULTS LOGIC: BIDIRECTIONAL INFINITE LOOP 
-// PER-POST UI & TRUE IMAGE ALIGNMENT (PNG BACKGROUND FIX)
+// RESULTS LOGIC: TIKTOK STYLE WITH BOTTOM SHEET COMMENTS
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -470,8 +469,12 @@ const resultsViewport = document.getElementById("resultsViewport");
 let finalizedSubmissions = [];
 let onboardingTimer = null;
 let activeUnsubComments = null;
+let activeUnsubSheetComments = null;
 let activeLikesUnsub = null;
 let currentModalSubId = null;
+
+let activeCommentActionId = null;
+let activeCommentActionPin = null;
 
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   finalizedSubmissions = [];
@@ -496,9 +499,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV7")) {
+    if (!localStorage.getItem("shortsOnboardingV8")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV7")) {
+        if (!localStorage.getItem("shortsOnboardingV8")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -508,23 +511,20 @@ seeResultsBtn.addEventListener("click", () => {
 
 let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV7")) {
-    localStorage.setItem("shortsOnboardingV7", "true");
+  if (!localStorage.getItem("shortsOnboardingV8")) {
+    localStorage.setItem("shortsOnboardingV8", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
 
-  // Buttery Smooth Seamless Teleportation Logic
   clearTimeout(scrollDebounce);
   scrollDebounce = setTimeout(() => {
     if (finalizedSubmissions.length <= 1) return;
-    
     const viewportTop = resultsViewport.scrollTop;
     const slides = document.querySelectorAll('.result-slide-wrapper');
     
     let activeSlide = null;
     slides.forEach(slide => {
-      // Find the perfectly snapped slide
       if (Math.abs(slide.offsetTop - viewportTop) < 10) {
         activeSlide = slide;
       }
@@ -539,7 +539,7 @@ resultsViewport.addEventListener("scroll", () => {
         if (realLast) resultsViewport.scrollTop = realLast.offsetTop;
       }
     }
-  }, 150); // Exact delay ensuring scroll-snap physics have completely finished
+  }, 150); 
 }, { passive: true });
 
 document.getElementById("closeResultsBtn").addEventListener("click", () => {
@@ -548,19 +548,19 @@ document.getElementById("closeResultsBtn").addEventListener("click", () => {
   clearTimeout(onboardingTimer);
   if (activeUnsubComments) activeUnsubComments();
   if (activeLikesUnsub) activeLikesUnsub();
+  closeBottomSheet();
 });
 
 const resObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       const slide = entry.target;
-      const domIdx = parseInt(slide.dataset.index);
       const realIndex = parseInt(slide.dataset.realIndex);
       
       document.getElementById("resultsPagination").innerText = `${realIndex + 1} / ${finalizedSubmissions.length}`;
       
-      listenToComments(finalizedSubmissions[realIndex].id, domIdx);
-      listenToLikes(finalizedSubmissions[realIndex].id, domIdx);
+      listenToLiveFloatingComments(finalizedSubmissions[realIndex].id);
+      listenToLikes(finalizedSubmissions[realIndex].id, parseInt(slide.dataset.index));
     }
   });
 }, { threshold: 0.6 }); 
@@ -570,11 +570,8 @@ function buildResultsCarousel() {
   
   let slidesToBuild = [];
   if (finalizedSubmissions.length > 1) {
-    // Top Clone (Last item) for scrolling UP past the first item
     slidesToBuild.push({...finalizedSubmissions[finalizedSubmissions.length - 1], isTopClone: true});
-    // Real items
     slidesToBuild.push(...finalizedSubmissions);
-    // Bottom Clone (First item) for scrolling DOWN past the last item
     slidesToBuild.push({...finalizedSubmissions[0], isBottomClone: true});
   } else {
     slidesToBuild = [...finalizedSubmissions];
@@ -582,7 +579,6 @@ function buildResultsCarousel() {
 
   slidesToBuild.forEach((sub, idx) => {
     const slide = document.createElement("div");
-    
     let classNames = "result-slide-wrapper";
     if (sub.isTopClone) classNames += " is-top-clone";
     if (sub.isBottomClone) classNames += " is-bottom-clone";
@@ -627,8 +623,6 @@ function buildResultsCarousel() {
           Download Result
         </button>
       </div>
-
-      <div class="live-comments-stream" id="stream-${idx}"></div>
     `;
     
     resultsViewport.appendChild(slide);
@@ -636,7 +630,6 @@ function buildResultsCarousel() {
     resObserver.observe(slide);
   });
   
-  // Wait exactly 50ms for the browser to calculate layouts before jumping to the correct first slide
   setTimeout(() => {
     if (finalizedSubmissions.length > 1) {
       const realFirst = document.getElementById("slide-1");
@@ -683,8 +676,7 @@ function buildResultsCarousel() {
 
   document.querySelectorAll('.comment-trigger-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      currentModalSubId = e.currentTarget.dataset.id;
-      document.getElementById("commentInputOverlay").classList.remove("hidden");
+      openBottomSheet(e.currentTarget.dataset.id);
     });
   });
 }
@@ -726,10 +718,10 @@ function listenToLikes(submissionId, domIdx) {
   });
 }
 
-function listenToComments(submissionId, domIdx) {
+// Global Floating Stream for currently viewed post
+function listenToLiveFloatingComments(submissionId) {
   if (activeUnsubComments) activeUnsubComments();
-  const streamEl = document.getElementById(`stream-${domIdx}`);
-  if(!streamEl) return;
+  const streamEl = document.getElementById("floatingStream");
   streamEl.innerHTML = ""; 
   
   const commentsRef = collection(db, "submissions", submissionId, "comments");
@@ -740,7 +732,6 @@ function listenToComments(submissionId, domIdx) {
         const bubble = document.createElement("div");
         bubble.className = "live-comment-bubble";
         bubble.innerHTML = `<b>${c.name}:</b> ${c.text}`;
-        
         streamEl.prepend(bubble);
         setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6000);
       }
@@ -748,24 +739,144 @@ function listenToComments(submissionId, domIdx) {
   });
 }
 
-const commentInputOverlay = document.getElementById("commentInputOverlay");
-document.getElementById("cancelCommentBtn").addEventListener("click", () => {
-  commentInputOverlay.classList.add("hidden");
-});
+// -------------------------------------------------------------
+// TIKTOK STYLE BOTTOM SHEET COMMENTS LOGIC
+// -------------------------------------------------------------
+const bottomSheetOverlay = document.getElementById("bottomSheetOverlay");
+const tiktokCommentsSheet = document.getElementById("tiktokCommentsSheet");
 
-document.getElementById("submitCommentBtn").addEventListener("click", async () => {
-  const name = document.getElementById("commentRealName").value.trim();
-  const text = document.getElementById("commentText").value.trim();
+function openBottomSheet(subId) {
+  currentModalSubId = subId;
+  bottomSheetOverlay.classList.remove("hidden");
+  // slight timeout to allow display:block to apply before animation class
+  setTimeout(() => tiktokCommentsSheet.classList.add("open"), 10);
   
-  if (!name || !text) { showToast("Please fill both name and comment."); return; }
+  if(activeUnsubSheetComments) activeUnsubSheetComments();
+  
+  const listEl = document.getElementById("sheetCommentsList");
+  listEl.innerHTML = "";
+  
+  const commentsRef = collection(db, "submissions", subId, "comments");
+  activeUnsubSheetComments = onSnapshot(query(commentsRef, orderBy("timestamp", "desc")), (snap) => {
+    document.getElementById("sheetCommentCount").innerText = `${snap.size} comments`;
+    listEl.innerHTML = "";
+    
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      const cId = docSnap.id;
+      const timeStr = c.timestamp ? timeAgo(c.timestamp.toDate()) : "Just now";
+      const initial = c.name ? c.name.charAt(0).toUpperCase() : "?";
+      
+      listEl.innerHTML += `
+        <div class="sheet-comment-item">
+          <div class="sheet-avatar">${initial}</div>
+          <div class="sheet-comment-body">
+            <span class="sheet-comment-name">${c.name} <span class="sheet-comment-time">${timeStr}</span></span>
+            <p class="sheet-comment-text">${c.text}</p>
+          </div>
+          <button class="sheet-comment-options" onclick="openCommentOptions('${cId}', '${c.pin}', '${c.text.replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </div>
+      `;
+    });
+  });
+}
+
+function closeBottomSheet() {
+  tiktokCommentsSheet.classList.remove("open");
+  setTimeout(() => {
+    bottomSheetOverlay.classList.add("hidden");
+    if(activeUnsubSheetComments) activeUnsubSheetComments();
+  }, 300);
+}
+
+bottomSheetOverlay.addEventListener("click", closeBottomSheet);
+document.getElementById("closeSheetBtn").addEventListener("click", closeBottomSheet);
+
+document.getElementById("sheetSubmitBtn").addEventListener("click", async () => {
+  const name = document.getElementById("sheetCommentName").value.trim();
+  const pin = document.getElementById("sheetCommentPin").value.trim();
+  const text = document.getElementById("sheetCommentText").value.trim();
+  
+  if (!name || !text) { showToast("Please fill in your name and comment."); return; }
+  if (!/^\d{4}$/.test(pin)) { showToast("PIN must be exactly 4 digits."); return; }
   if (!currentModalSubId) return;
   
   await addDoc(collection(db, "submissions", currentModalSubId, "comments"), {
     name: name,
+    pin: pin,
     text: text,
     timestamp: serverTimestamp()
   });
   
-  document.getElementById("commentText").value = "";
-  commentInputOverlay.classList.add("hidden");
+  document.getElementById("sheetCommentText").value = "";
+  document.getElementById("displayPin").innerText = pin;
+  document.getElementById("pinReminderModal").classList.remove("hidden");
 });
+
+document.getElementById("closePinReminderBtn").addEventListener("click", () => {
+  document.getElementById("pinReminderModal").classList.add("hidden");
+});
+
+document.getElementById("copyPinBtn").addEventListener("click", () => {
+  const pin = document.getElementById("displayPin").innerText;
+  navigator.clipboard.writeText(pin).then(() => showToast("PIN Copied!"));
+});
+
+// Edit & Delete Options Logic
+window.openCommentOptions = (cId, cPin, cText) => {
+  activeCommentActionId = cId;
+  activeCommentActionPin = cPin;
+  
+  document.getElementById("verifyPinInput").value = "";
+  document.getElementById("editArea").classList.add("hidden");
+  document.getElementById("actionButtons").style.display = "flex";
+  document.getElementById("saveEditBtn").classList.add("hidden");
+  document.getElementById("editCommentText").value = cText;
+  
+  document.getElementById("commentActionModal").classList.remove("hidden");
+};
+
+document.getElementById("cancelActionBtn").addEventListener("click", () => {
+  document.getElementById("commentActionModal").classList.add("hidden");
+});
+
+document.getElementById("verifyDeleteBtn").addEventListener("click", async () => {
+  const pinInput = document.getElementById("verifyPinInput").value;
+  if (pinInput !== activeCommentActionPin) { showToast("Incorrect PIN."); return; }
+  
+  if (confirm("Permanently delete this comment?")) {
+    await deleteDoc(doc(db, "submissions", currentModalSubId, "comments", activeCommentActionId));
+    document.getElementById("commentActionModal").classList.add("hidden");
+    showToast("Comment deleted.");
+  }
+});
+
+document.getElementById("verifyEditBtn").addEventListener("click", () => {
+  const pinInput = document.getElementById("verifyPinInput").value;
+  if (pinInput !== activeCommentActionPin) { showToast("Incorrect PIN."); return; }
+  
+  document.getElementById("actionButtons").style.display = "none";
+  document.getElementById("editArea").classList.remove("hidden");
+  document.getElementById("saveEditBtn").classList.remove("hidden");
+});
+
+document.getElementById("saveEditBtn").addEventListener("click", async () => {
+  const newText = document.getElementById("editCommentText").value.trim();
+  if (!newText) { showToast("Comment cannot be empty."); return; }
+  
+  await updateDoc(doc(db, "submissions", currentModalSubId, "comments", activeCommentActionId), {
+    text: newText
+  });
+  
+  document.getElementById("commentActionModal").classList.add("hidden");
+  showToast("Comment updated!");
+});
+
+// Expose copyToolLink safely to window
+window.copyToolLink = (num) => {
+  const link = document.getElementById(`toolLink${num}`).href;
+  if (link && link !== window.location.href && !link.endsWith("#")) { navigator.clipboard.writeText(link).then(() => showToast("Site Link Copied!")); } 
+  else { showToast("No valid link to copy yet."); }
+};

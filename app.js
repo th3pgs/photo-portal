@@ -732,7 +732,6 @@ function listenToLiveFloatingComments(submissionId) {
         const bubble = document.createElement("div");
         bubble.className = "live-comment-bubble";
         
-        // Sanitize for floating bubble
         const safeText = c.text ? c.text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
         bubble.innerHTML = `<b>${c.name}:</b> ${safeText}`;
         streamEl.prepend(bubble);

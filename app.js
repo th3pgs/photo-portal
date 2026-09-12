@@ -379,6 +379,8 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 
     let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`;
     let dlBtn = '';
+    let beforeUploadBtn = '';
+    
     if (d.imageUrl) {
       if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov") || d.imageUrl.includes("/video/")) {
         imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
@@ -386,6 +388,8 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         imgHtml = `<img src="${d.imageUrl}">`;
       }
       dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
+    } else {
+      beforeUploadBtn = `<button class="btn-admin-action" style="flex:1; background:#3b82f6; color:white; border:none;" onclick="triggerBeforeUpload('${id}')">Upload Before</button>`;
     }
     
     const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
@@ -404,6 +408,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
           <div style="display:flex; gap:8px; margin-bottom: 10px;">
             <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}'); showToast('Copied!')">Copy Info</button>
             ${dlBtn}
+            ${beforeUploadBtn}
           </div>
           <div style="display:flex; gap:8px; margin-bottom: 10px;">
              ${finalUploadBtn}
@@ -428,6 +433,21 @@ window.triggerFinalUpload = async (subId) => {
       const url = await adminCloudUploadWithProgress(file, "Uploading Final Image...");
       await setDoc(doc(db, "submissions", subId), { finalImageUrl: url }, { merge: true });
       showToast("Finalized Image Paired!");
+    } catch(err) { showToast("Upload failed."); }
+  };
+  input.click();
+};
+
+window.triggerBeforeUpload = async (subId) => {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const url = await adminCloudUploadWithProgress(file, "Uploading Before Image...");
+      await setDoc(doc(db, "submissions", subId), { imageUrl: url }, { merge: true });
+      showToast("Before Image Added!");
     } catch(err) { showToast("Upload failed."); }
   };
   input.click();

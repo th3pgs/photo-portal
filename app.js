@@ -496,9 +496,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV5")) {
+    if (!localStorage.getItem("shortsOnboardingV7")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV5")) {
+        if (!localStorage.getItem("shortsOnboardingV7")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -506,12 +506,40 @@ seeResultsBtn.addEventListener("click", () => {
   }, 1200);
 });
 
+let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV5")) {
-    localStorage.setItem("shortsOnboardingV5", "true");
+  if (!localStorage.getItem("shortsOnboardingV7")) {
+    localStorage.setItem("shortsOnboardingV7", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
+
+  // Buttery Smooth Seamless Teleportation Logic
+  clearTimeout(scrollDebounce);
+  scrollDebounce = setTimeout(() => {
+    if (finalizedSubmissions.length <= 1) return;
+    
+    const viewportTop = resultsViewport.scrollTop;
+    const slides = document.querySelectorAll('.result-slide-wrapper');
+    
+    let activeSlide = null;
+    slides.forEach(slide => {
+      // Find the perfectly snapped slide
+      if (Math.abs(slide.offsetTop - viewportTop) < 10) {
+        activeSlide = slide;
+      }
+    });
+
+    if (activeSlide) {
+      if (activeSlide.classList.contains("is-bottom-clone")) {
+        const realFirst = document.getElementById("slide-1");
+        if (realFirst) resultsViewport.scrollTop = realFirst.offsetTop;
+      } else if (activeSlide.classList.contains("is-top-clone")) {
+        const realLast = document.getElementById(`slide-${finalizedSubmissions.length}`);
+        if (realLast) resultsViewport.scrollTop = realLast.offsetTop;
+      }
+    }
+  }, 150); // Exact delay ensuring scroll-snap physics have completely finished
 }, { passive: true });
 
 document.getElementById("closeResultsBtn").addEventListener("click", () => {
@@ -533,19 +561,6 @@ const resObserver = new IntersectionObserver((entries) => {
       
       listenToComments(finalizedSubmissions[realIndex].id, domIdx);
       listenToLikes(finalizedSubmissions[realIndex].id, domIdx);
-
-      // Bidirectional Infinite Scroll Logic
-      if (slide.classList.contains("is-bottom-clone")) {
-        setTimeout(() => {
-          const realFirst = document.getElementById("slide-1");
-          if (realFirst) resultsViewport.scrollTop = realFirst.offsetTop;
-        }, 300); 
-      } else if (slide.classList.contains("is-top-clone")) {
-        setTimeout(() => {
-          const realLast = document.getElementById(`slide-${finalizedSubmissions.length}`);
-          if (realLast) resultsViewport.scrollTop = realLast.offsetTop;
-        }, 300);
-      }
     }
   });
 }, { threshold: 0.6 }); 
@@ -555,11 +570,11 @@ function buildResultsCarousel() {
   
   let slidesToBuild = [];
   if (finalizedSubmissions.length > 1) {
-    // Top Clone (Last item) for scrolling UP
+    // Top Clone (Last item) for scrolling UP past the first item
     slidesToBuild.push({...finalizedSubmissions[finalizedSubmissions.length - 1], isTopClone: true});
     // Real items
     slidesToBuild.push(...finalizedSubmissions);
-    // Bottom Clone (First item) for scrolling DOWN
+    // Bottom Clone (First item) for scrolling DOWN past the last item
     slidesToBuild.push({...finalizedSubmissions[0], isBottomClone: true});
   } else {
     slidesToBuild = [...finalizedSubmissions];
@@ -621,7 +636,7 @@ function buildResultsCarousel() {
     resObserver.observe(slide);
   });
   
-  // Set initial scroll position to the first REAL slide (index 1) to allow scrolling up
+  // Wait exactly 50ms for the browser to calculate layouts before jumping to the correct first slide
   setTimeout(() => {
     if (finalizedSubmissions.length > 1) {
       const realFirst = document.getElementById("slide-1");
@@ -629,7 +644,7 @@ function buildResultsCarousel() {
     } else {
       resultsViewport.scrollTop = 0;
     }
-  }, 0);
+  }, 50); 
 
   document.querySelectorAll('.tinder-download-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {

@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, query, orderBy, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, query, orderBy, serverTimestamp, addDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -449,21 +449,19 @@ document.getElementById("uploadImgBtn2").addEventListener("click", async () => {
 document.getElementById("removeImgBtn2").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview2: "" }, { merge: true }); showToast("Pic 2 Removed."); });
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
-
 // -------------------------------------------------------------
-// NEW RESULTS LOGIC: YT SHORTS & TINDER STYLE, TRUE SLIDER OVERLAY
-// NATIVE VERTICAL SCROLLING (YT SHORTS BEHAVIOR)
+// NEW RESULTS LOGIC: YT SHORTS & TINDER STYLE
+// NATIVE VERTICAL SCROLLING WITH INFINITE LOOP
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
 const resultsViewport = document.getElementById("resultsViewport");
-const liveCommentsStream = document.getElementById("liveCommentsStream");
 
 let finalizedSubmissions = [];
 let currentResIndex = 0;
 let onboardingTimer = null;
 let activeUnsubComments = null;
-let currentLikesState = false;
+let activeLikesUnsub = null;
 
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   finalizedSubmissions = [];
@@ -488,10 +486,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    // Onboarding Animation Logic
-    if (!localStorage.getItem("shortsOnboardingDone")) {
+    if (!localStorage.getItem("shortsOnboardingV3")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingDone")) {
+        if (!localStorage.getItem("shortsOnboardingV3")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -499,10 +496,9 @@ seeResultsBtn.addEventListener("click", () => {
   }, 1200);
 });
 
-// Dismiss onboarding on first scroll
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingDone")) {
-    localStorage.setItem("shortsOnboardingDone", "true");
+  if (!localStorage.getItem("shortsOnboardingV3")) {
+    localStorage.setItem("shortsOnboardingV3", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -513,24 +509,44 @@ document.getElementById("closeResultsBtn").addEventListener("click", () => {
   document.getElementById("entryGate").style.display = "flex";
   clearTimeout(onboardingTimer);
   if (activeUnsubComments) activeUnsubComments();
+  if (activeLikesUnsub) activeLikesUnsub();
 });
 
-// Intersection Observer for YT Shorts native scrolling detection
 const resObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      const idx = parseInt(entry.target.dataset.index);
-      updateResultView(idx);
+      const slide = entry.target;
+      const domIdx = parseInt(slide.dataset.index);
+      const realIndex = parseInt(slide.dataset.realIndex);
+      
+      currentResIndex = realIndex;
+      document.getElementById("resultsPagination").innerText = `${realIndex + 1} / ${finalizedSubmissions.length}`;
+      
+      listenToComments(finalizedSubmissions[realIndex].id, domIdx);
+      listenToLikes(finalizedSubmissions[realIndex].id, domIdx);
+
+      if (slide.classList.contains("is-clone")) {
+        setTimeout(() => {
+          resultsViewport.scrollTop = 0;
+        }, 400); 
+      }
     }
   });
-}, { threshold: 0.5 }); // Triggers when 50% of the slide is visible
+}, { threshold: 0.6 }); 
 
 function buildResultsCarousel() {
   resultsViewport.innerHTML = "";
-  finalizedSubmissions.forEach((sub, idx) => {
+  
+  let slidesToBuild = [...finalizedSubmissions];
+  if (slidesToBuild.length > 1) {
+    slidesToBuild.push({...slidesToBuild[0], isClone: true});
+  }
+
+  slidesToBuild.forEach((sub, idx) => {
     const slide = document.createElement("div");
-    slide.className = "result-slide-wrapper";
+    slide.className = "result-slide-wrapper" + (sub.isClone ? " is-clone" : "");
     slide.dataset.index = idx;
+    slide.dataset.realIndex = sub.isClone ? 0 : idx;
     slide.id = `slide-${idx}`;
     
     slide.innerHTML = `
@@ -539,15 +555,76 @@ function buildResultsCarousel() {
         <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}">
         <div class="slider-handle" id="bahandle-${idx}"></div>
       </div>
+      
+      <div class="shorts-action-bar">
+        <button class="action-btn like-btn" data-id="${sub.id}">
+          <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none" class="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+          <span class="like-counter" id="like-count-${idx}">${sub.likes || 0}</span>
+        </button>
+        <button class="action-btn comment-trigger-btn">
+          <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+        </button>
+      </div>
+
+      <div class="tinder-info-bar">
+        <h2>${sub.firstName} <span style="font-weight: 400;">${sub.lastName}</span></h2>
+        <p>${sub.role || 'No Job Title'}</p>
+        <button class="tinder-download-btn" data-url="${sub.finalImageUrl}" data-name="${sub.firstName}_${sub.lastName}">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download Result
+        </button>
+      </div>
+
+      <div class="live-comments-stream" id="stream-${idx}"></div>
     `;
+    
     resultsViewport.appendChild(slide);
     initTrueOverlaySlider(idx);
     resObserver.observe(slide);
   });
   
-  // Reset scroll to top
   resultsViewport.scrollTop = 0;
-  updateResultView(0);
+
+  document.querySelectorAll('.tinder-download-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const url = e.currentTarget.dataset.url;
+      const name = e.currentTarget.dataset.name;
+      showToast("Preparing high quality download...");
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${name}_Final.jpg`;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      } catch (error) { window.open(url, "_blank"); }
+    });
+  });
+
+  document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const subId = e.currentTarget.dataset.id;
+      const svg = e.currentTarget.querySelector('.heart-icon');
+      
+      svg.style.fill = "#ff003c"; svg.style.stroke = "none";
+      svg.style.animation = "attentionShake 0.4s ease";
+      setTimeout(() => svg.style.animation = "", 400);
+      
+      if(e.currentTarget.dataset.liked === "true") return; 
+      e.currentTarget.dataset.liked = "true";
+
+      try {
+        const ref = doc(db, "submissions", subId);
+        await updateDoc(ref, { likes: increment(1) });
+      } catch(err) { console.error(err); }
+    });
+  });
+
+  document.querySelectorAll('.comment-trigger-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById("commentInputOverlay").classList.remove("hidden");
+    });
+  });
 }
 
 function initTrueOverlaySlider(idx) {
@@ -576,54 +653,22 @@ function initTrueOverlaySlider(idx) {
   window.addEventListener("touchmove", moveSlider, {passive: true});
 }
 
-function updateResultView(idx) {
-  currentResIndex = idx;
-  document.getElementById("resultsPagination").innerText = `${currentResIndex + 1} / ${finalizedSubmissions.length}`;
-  
-  const currentData = finalizedSubmissions[currentResIndex];
-  document.getElementById("resFirstName").innerText = currentData.firstName;
-  document.getElementById("resLastName").innerText = currentData.lastName;
-  document.getElementById("resRole").innerText = currentData.role;
-  
-  currentLikesState = false;
-  document.getElementById("likeBtn").innerHTML = `<svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-
-  listenToComments(currentData.id);
+function listenToLikes(submissionId, domIdx) {
+  if(activeLikesUnsub) activeLikesUnsub();
+  activeLikesUnsub = onSnapshot(doc(db, "submissions", submissionId), (docSnap) => {
+    if(docSnap.exists()){
+      const likes = docSnap.data().likes || 0;
+      const counterEl = document.getElementById(`like-count-${domIdx}`);
+      if(counterEl) counterEl.innerText = likes;
+    }
+  });
 }
 
-document.getElementById("downloadFinalBtn").addEventListener("click", async () => {
-  const currentData = finalizedSubmissions[currentResIndex];
-  showToast("Preparing high quality download...");
-  try {
-    const response = await fetch(currentData.finalImageUrl);
-    const blob = await response.blob();
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${currentData.firstName}_${currentData.lastName}_Final.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } catch (error) {
-    showToast("Direct download blocked by browser. Opening in new tab.");
-    window.open(currentData.finalImageUrl, "_blank");
-  }
-});
-
-document.getElementById("likeBtn").addEventListener("click", () => {
-  currentLikesState = !currentLikesState;
-  const btn = document.getElementById("likeBtn");
-  if (currentLikesState) {
-    btn.innerHTML = `<svg viewBox="0 0 24 24" width="32" height="32" stroke="none" fill="#ff003c"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-    btn.style.animation = "attentionShake 0.4s ease";
-    setTimeout(() => btn.style.animation = "", 400);
-  } else {
-    btn.innerHTML = `<svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-  }
-});
-
-function listenToComments(submissionId) {
+function listenToComments(submissionId, domIdx) {
   if (activeUnsubComments) activeUnsubComments();
-  liveCommentsStream.innerHTML = ""; 
+  const streamEl = document.getElementById(`stream-${domIdx}`);
+  if(!streamEl) return;
+  streamEl.innerHTML = ""; 
   
   const commentsRef = collection(db, "submissions", submissionId, "comments");
   activeUnsubComments = onSnapshot(query(commentsRef, orderBy("timestamp", "desc")), (snap) => {
@@ -634,7 +679,7 @@ function listenToComments(submissionId) {
         bubble.className = "live-comment-bubble";
         bubble.innerHTML = `<b>${c.name}:</b> ${c.text}`;
         
-        liveCommentsStream.prepend(bubble);
+        streamEl.prepend(bubble);
         setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6000);
       }
     });
@@ -642,9 +687,6 @@ function listenToComments(submissionId) {
 }
 
 const commentInputOverlay = document.getElementById("commentInputOverlay");
-document.getElementById("triggerCommentBtn").addEventListener("click", () => {
-  commentInputOverlay.classList.remove("hidden");
-});
 document.getElementById("cancelCommentBtn").addEventListener("click", () => {
   commentInputOverlay.classList.add("hidden");
 });

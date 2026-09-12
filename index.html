@@ -21,17 +21,34 @@
     </div>
   </div>
 
-  <!-- ENTRY GATE -->
+  <!-- ENTRY GATE (SPLIT PATH) -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
-      <h2 class="step-item delay-1">Welcome to the media uploader</h2>
-      <div class="steps-list">
-        <p class="step-item delay-1"><b>1.</b> Pick a professional pose. If you don't have one, follow the video below to get a <mark>high-quality AI-edited professional image</mark>.</p>
-        <p class="step-item delay-2"><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
-        <p class="step-item delay-3"><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
+      <h2 class="step-item delay-1" style="margin-bottom: 1.2rem;">Welcome to the media platform</h2>
+      
+      <!-- Option 1: New Uploaders -->
+      <div class="gate-option-box step-item delay-1">
+        <h4>Haven't uploaded yet?</h4>
+        <div class="steps-list" style="margin-top: 12px; margin-bottom: 18px;">
+          <p><b>1.</b> Pick a professional pose. If you don't have one, follow the video below to get a <mark>high-quality AI-edited professional image</mark>.</p>
+          <p><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
+          <p><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
+        </div>
+        <button id="enterSiteBtn" class="btn-yellow">Go learn and upload</button>
       </div>
-      <button id="enterSiteBtn" class="btn-yellow delay-btn">Go learn and upload</button>
-      <button id="seeResultsBtn" class="btn-green delay-btn" style="margin-top: 12px;">See results</button>
+
+      <div class="gate-divider step-item delay-2"><span>OR</span></div>
+
+      <!-- Option 2: Returning Users -->
+      <div class="gate-option-box step-item delay-3">
+        <h4>Already uploaded?</h4>
+        <p style="font-size: 0.9rem; color: #475569; margin: 8px 0 18px; line-height: 1.5;">
+          See the newly released edits and check out your team's results. <br>
+          <i style="color: #64748b; margin-top: 5px; display: block;">* Note: Only fully processed and finalized edits will appear here. If you just uploaded, check back later!</i>
+        </p>
+        <button id="seeResultsBtn" class="btn-green">View Finalized Edits</button>
+      </div>
+
     </div>
   </div>
 
@@ -103,6 +120,7 @@
       </div>
       <div class="glass-card tools-wrapper">
         <div class="tools-flow">
+          
           <div class="tool-step">
             <img id="toolImg1" class="tool-icon" src="" alt="Tool 1 Icon">
             <h4 id="toolTitle1" class="tool-title">Step 1</h4>
@@ -111,7 +129,9 @@
               <button class="tool-btn tool-copy" onclick="copyToolLink(1)" title="Copy Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
             </div>
           </div>
+          
           <div class="tool-arrow"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+          
           <div class="tool-step">
             <img id="toolImg2" class="tool-icon" src="" alt="Tool 2 Icon">
             <h4 id="toolTitle2" class="tool-title">Step 2</h4>
@@ -120,7 +140,9 @@
               <button class="tool-btn tool-copy" onclick="copyToolLink(2)" title="Copy Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
             </div>
           </div>
+
           <div class="tool-arrow"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+          
           <div class="tool-step">
             <img id="toolImg3" class="tool-icon" src="" alt="Tool 3 Icon">
             <h4 id="toolTitle3" class="tool-title">Step 3</h4>
@@ -129,6 +151,7 @@
               <button class="tool-btn tool-copy" onclick="copyToolLink(3)" title="Copy Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
             </div>
           </div>
+
         </div>
       </div>
     </section>
@@ -224,7 +247,7 @@
     
     <footer id="secretTrigger" class="secret-pad"></footer>
 
-    <!-- TINDER / YT SHORTS STYLE RESULTS WINDOW -->
+    <!-- YT SHORTS STYLE RESULTS WINDOW -->
     <div id="resultsModal" class="results-fullscreen hidden">
       
       <!-- ONBOARDING ANIMATION OVERLAY -->

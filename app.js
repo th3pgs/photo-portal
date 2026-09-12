@@ -461,7 +461,7 @@ document.getElementById("seedBtn").addEventListener("click", async () => { const
 
 // -------------------------------------------------------------
 // NEW RESULTS LOGIC: BIDIRECTIONAL INFINITE LOOP 
-// PER-POST UI & TRUE IMAGE ALIGNMENT
+// PER-POST UI & TRUE IMAGE ALIGNMENT (PNG BACKGROUND FIX)
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -577,9 +577,9 @@ function buildResultsCarousel() {
     
     let realIndex = idx;
     if (finalizedSubmissions.length > 1) {
-      if (idx === 0) realIndex = finalizedSubmissions.length - 1; // Top clone
-      else if (idx === slidesToBuild.length - 1) realIndex = 0;   // Bottom clone
-      else realIndex = idx - 1; // Normal items offset by 1
+      if (idx === 0) realIndex = finalizedSubmissions.length - 1; 
+      else if (idx === slidesToBuild.length - 1) realIndex = 0;   
+      else realIndex = idx - 1; 
     }
     
     slide.dataset.realIndex = realIndex;

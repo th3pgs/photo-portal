@@ -281,7 +281,8 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 
     let finalUploadBtn = !d.finalImageUrl 
       ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
-      : `<span class="edit-badge" style="width:100%; margin-bottom:0;">Finalized & Live</span>`;
+      : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
+         <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
 
     gallery.innerHTML += `
       <div class="gallery-card ${editingClass}" id="gal-${id}">
@@ -310,6 +311,15 @@ window.triggerFinalUpload = async (subId) => {
     try { const url = await adminCloudUploadWithProgress(file, "Uploading Final Image..."); await setDoc(doc(db, "submissions", subId), { finalImageUrl: url }, { merge: true }); showToast("Finalized Image Paired!"); } catch(err) { showToast("Upload failed."); }
   };
   input.click();
+};
+
+window.removeFinalImage = async (subId) => {
+  if (confirm("Remove the finalized image for this entry?")) {
+    try {
+      await updateDoc(doc(db, "submissions", subId), { finalImageUrl: "" });
+      showToast("Final image removed!");
+    } catch (err) { showToast("Failed to remove."); }
+  }
 };
 
 window.triggerBeforeUpload = async (subId) => {
@@ -449,7 +459,6 @@ document.getElementById("uploadImgBtn2").addEventListener("click", async () => {
 document.getElementById("removeImgBtn2").addEventListener("click", async () => { await setDoc(doc(db, "config", "settings"), { preview2: "" }, { merge: true }); showToast("Pic 2 Removed."); });
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
-
 // -------------------------------------------------------------
 // NEW RESULTS LOGIC: PER-POST UI & TRUE IMAGE ALIGNMENT
 // -------------------------------------------------------------
@@ -486,7 +495,6 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    // Cache key forcefully reset to V4 as requested
     if (!localStorage.getItem("shortsOnboardingV4")) {
       onboardingTimer = setTimeout(() => {
         if (!localStorage.getItem("shortsOnboardingV4")) {
@@ -538,7 +546,6 @@ function buildResultsCarousel() {
   resultsViewport.innerHTML = "";
   
   let slidesToBuild = [...finalizedSubmissions];
-  // Clone the first slide to the end for the infinite scroll illusion
   if (slidesToBuild.length > 1) {
     slidesToBuild.push({...slidesToBuild[0], isClone: true});
   }
@@ -549,7 +556,6 @@ function buildResultsCarousel() {
     slide.dataset.index = idx;
     slide.dataset.realIndex = sub.isClone ? 0 : idx;
     
-    // Per-slide embedded UI (Ensures everything scrolls naturally with the specific post)
     slide.innerHTML = `
       <div class="ba-container">
         <div class="ba-image-wrapper" id="bacontainer-${idx}">
@@ -588,7 +594,6 @@ function buildResultsCarousel() {
   
   resultsViewport.scrollTop = 0;
 
-  // Individual post download bindings
   document.querySelectorAll('.tinder-download-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const url = e.currentTarget.dataset.url;
@@ -605,7 +610,6 @@ function buildResultsCarousel() {
     });
   });
 
-  // Database-connected global like buttons
   document.querySelectorAll('.like-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const subId = e.currentTarget.dataset.id;
@@ -647,7 +651,6 @@ function initTrueOverlaySlider(idx) {
     if (x < 0) x = 0; if (x > rect.width) x = rect.width;
     const percent = (x / rect.width) * 100;
     
-    // Bounds perfectly to the image wrapper so swiping outside doesn't warp the calculation
     overlayImg.style.clipPath = `polygon(0 0, ${percent}% 0, ${percent}% 100%, 0 100%)`;
     handle.style.left = `${percent}%`;
   };

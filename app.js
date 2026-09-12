@@ -461,6 +461,7 @@ document.getElementById("seedBtn").addEventListener("click", async () => { const
 
 // -------------------------------------------------------------
 // RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PREVENT TEXT HIGHLIGHT
+// CROP & CONTAINMENT FIXES ADDED
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -499,9 +500,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV12")) {
+    if (!localStorage.getItem("shortsOnboardingV13")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV12")) {
+        if (!localStorage.getItem("shortsOnboardingV13")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -511,8 +512,8 @@ seeResultsBtn.addEventListener("click", () => {
 
 let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV12")) {
-    localStorage.setItem("shortsOnboardingV12", "true");
+  if (!localStorage.getItem("shortsOnboardingV13")) {
+    localStorage.setItem("shortsOnboardingV13", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -600,8 +601,8 @@ function buildResultsCarousel() {
     slide.innerHTML = `
       <div class="ba-container">
         <div class="ba-image-wrapper" id="bacontainer-${idx}">
-          <img src="${sub.finalImageUrl}" class="img-base">
-          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}">
+          <img src="${sub.finalImageUrl}" class="img-base" draggable="false">
+          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}" draggable="false">
           <div class="slider-handle" id="bahandle-${idx}"></div>
         </div>
       </div>

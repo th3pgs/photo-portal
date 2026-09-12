@@ -106,7 +106,7 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--tex
 
 .edit-badge { display: flex; align-items: center; gap: 8px; justify-content: center; background: #fef3c7; color: #d97706; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 0.85rem;}
 
-/* General Upload/Loading Overlays */
+/* Loading Overlay */
 .loading-gate { position: fixed; inset: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 99999; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease; }
 .upload-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); z-index: 50; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s; }
 .upload-status-box { text-align: center; width: 80%; max-width: 400px; }
@@ -281,6 +281,7 @@ mark { background: #fef08a; color: #0f172a; padding: 2px 6px; border-radius: 4px
   background-color: #000; 
   clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%); 
 } 
+
 .slider-handle { 
   position: absolute; top: 0; bottom: 0; left: 50%; width: 40px; margin-left: -20px; 
   cursor: ew-resize; z-index: 5; display: flex; align-items: center; justify-content: center; touch-action: pan-y;
@@ -323,10 +324,11 @@ mark { background: #fef08a; color: #0f172a; padding: 2px 6px; border-radius: 4px
   animation: slideInFloat 0.3s ease-out forwards; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1);
 }
 .live-comment-bubble b { color: #facc15; margin-right: 6px;}
+
 @keyframes slideInFloat { 0% { transform: translateX(-20px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
 
 /* ---------------------------------------------------
-   TIKTOK STYLE WHITE BOTTOM SHEET COMMENTS
+   NEW: TIKTOK STYLE WHITE BOTTOM SHEET COMMENTS
 --------------------------------------------------- */
 .bottom-sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100001; transition: opacity 0.3s; }
 .bottom-sheet { 

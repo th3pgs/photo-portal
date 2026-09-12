@@ -220,7 +220,6 @@
     <!-- YT SHORTS STYLE RESULTS WINDOW -->
     <div id="resultsModal" class="results-fullscreen hidden">
       
-      <!-- ONBOARDING ANIMATION OVERLAY -->
       <div id="scrollOnboarding" class="scroll-onboarding hidden">
         <div class="onboarding-content">
           <svg class="swipe-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
@@ -237,7 +236,7 @@
         <!-- Slides mapped dynamically -->
       </div>
       
-      <!-- TIKTOK STYLE BOTTOM SHEET (WHITE THEME) -->
+      <!-- TIKTOK STYLE BOTTOM SHEET (COMMENTS) -->
       <div id="bottomSheetOverlay" class="bottom-sheet-overlay hidden"></div>
       
       <div id="tiktokCommentsSheet" class="bottom-sheet">
@@ -250,7 +249,7 @@
           <!-- Comments JS Injected Here -->
         </div>
         
-        <form id="sheetCommentForm" class="sheet-input-area">
+        <form id="sheetCommentForm" class="sheet-input-area" onsubmit="return false;">
           <div class="input-row" style="margin-bottom: 8px;">
             <input type="text" id="sheetCommentName" placeholder="Your real name" class="sheet-input short" required autocomplete="off">
             <input type="password" id="sheetCommentPin" placeholder="4-Digit PIN" inputmode="numeric" maxlength="4" class="sheet-input short" title="PIN required to edit/delete later" required pattern="\d{4}">
@@ -299,7 +298,7 @@
         </div>
       </div>
 
-      <!-- Floating Stream -->
+      <!-- Floating bubbles active alongside bottom sheet -->
       <div class="live-comments-stream global-stream" id="floatingStream"></div>
 
     </div>

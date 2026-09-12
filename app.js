@@ -460,7 +460,8 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
-// RESULTS LOGIC: TIKTOK STYLE WITH BOTTOM SHEET COMMENTS
+// RESULTS LOGIC: BIDIRECTIONAL INFINITE LOOP 
+// PER-POST UI, TIKTOK STYLE WHITE COMMENTS & TRUE ALIGNMENT
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -499,9 +500,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV8")) {
+    if (!localStorage.getItem("shortsOnboardingV11")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV8")) {
+        if (!localStorage.getItem("shortsOnboardingV11")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -511,8 +512,8 @@ seeResultsBtn.addEventListener("click", () => {
 
 let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV8")) {
-    localStorage.setItem("shortsOnboardingV8", "true");
+  if (!localStorage.getItem("shortsOnboardingV11")) {
+    localStorage.setItem("shortsOnboardingV11", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -555,12 +556,13 @@ const resObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       const slide = entry.target;
+      const domIdx = parseInt(slide.dataset.index);
       const realIndex = parseInt(slide.dataset.realIndex);
       
       document.getElementById("resultsPagination").innerText = `${realIndex + 1} / ${finalizedSubmissions.length}`;
       
       listenToLiveFloatingComments(finalizedSubmissions[realIndex].id);
-      listenToLikes(finalizedSubmissions[realIndex].id, parseInt(slide.dataset.index));
+      listenToLikes(finalizedSubmissions[realIndex].id, domIdx);
     }
   });
 }, { threshold: 0.6 }); 
@@ -599,8 +601,8 @@ function buildResultsCarousel() {
     slide.innerHTML = `
       <div class="ba-container">
         <div class="ba-image-wrapper" id="bacontainer-${idx}">
-          <img src="${sub.finalImageUrl}" class="img-base">
-          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}">
+          <img src="${sub.finalImageUrl}" class="img-base" draggable="false">
+          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}" draggable="false">
           <div class="slider-handle" id="bahandle-${idx}"></div>
         </div>
       </div>
@@ -718,7 +720,6 @@ function listenToLikes(submissionId, domIdx) {
   });
 }
 
-// Global Floating Stream for currently viewed post
 function listenToLiveFloatingComments(submissionId) {
   if (activeUnsubComments) activeUnsubComments();
   const streamEl = document.getElementById("floatingStream");
@@ -748,7 +749,6 @@ const tiktokCommentsSheet = document.getElementById("tiktokCommentsSheet");
 function openBottomSheet(subId) {
   currentModalSubId = subId;
   bottomSheetOverlay.classList.remove("hidden");
-  // slight timeout to allow display:block to apply before animation class
   setTimeout(() => tiktokCommentsSheet.classList.add("open"), 10);
   
   if(activeUnsubSheetComments) activeUnsubSheetComments();
@@ -794,7 +794,9 @@ function closeBottomSheet() {
 bottomSheetOverlay.addEventListener("click", closeBottomSheet);
 document.getElementById("closeSheetBtn").addEventListener("click", closeBottomSheet);
 
-document.getElementById("sheetSubmitBtn").addEventListener("click", async () => {
+document.getElementById("sheetCommentForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
   const name = document.getElementById("sheetCommentName").value.trim();
   const pin = document.getElementById("sheetCommentPin").value.trim();
   const text = document.getElementById("sheetCommentText").value.trim();
@@ -803,16 +805,26 @@ document.getElementById("sheetSubmitBtn").addEventListener("click", async () => 
   if (!/^\d{4}$/.test(pin)) { showToast("PIN must be exactly 4 digits."); return; }
   if (!currentModalSubId) return;
   
-  await addDoc(collection(db, "submissions", currentModalSubId, "comments"), {
-    name: name,
-    pin: pin,
-    text: text,
-    timestamp: serverTimestamp()
-  });
+  const submitBtn = document.getElementById("sheetSubmitBtn");
+  submitBtn.disabled = true;
   
-  document.getElementById("sheetCommentText").value = "";
-  document.getElementById("displayPin").innerText = pin;
-  document.getElementById("pinReminderModal").classList.remove("hidden");
+  try {
+    await addDoc(collection(db, "submissions", currentModalSubId, "comments"), {
+      name: name,
+      pin: pin,
+      text: text,
+      timestamp: serverTimestamp()
+    });
+    
+    document.getElementById("sheetCommentText").value = "";
+    document.getElementById("displayPin").innerText = pin;
+    document.getElementById("pinReminderModal").classList.remove("hidden");
+  } catch (error) {
+    showToast("Failed to post comment.");
+    console.error(error);
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 
 document.getElementById("closePinReminderBtn").addEventListener("click", () => {
@@ -873,10 +885,3 @@ document.getElementById("saveEditBtn").addEventListener("click", async () => {
   document.getElementById("commentActionModal").classList.add("hidden");
   showToast("Comment updated!");
 });
-
-// Expose copyToolLink safely to window
-window.copyToolLink = (num) => {
-  const link = document.getElementById(`toolLink${num}`).href;
-  if (link && link !== window.location.href && !link.endsWith("#")) { navigator.clipboard.writeText(link).then(() => showToast("Site Link Copied!")); } 
-  else { showToast("No valid link to copy yet."); }
-};

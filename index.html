@@ -103,6 +103,7 @@
       </div>
     </section>
 
+    <!-- EDITING TOOLS FLOW -->
     <section class="section-container" id="toolsSection" style="display: none;">
       <div class="section-heading"><h3>How to edit your photo perfectly</h3></div>
       <div class="glass-card tools-wrapper">
@@ -219,6 +220,7 @@
     <!-- YT SHORTS STYLE RESULTS WINDOW -->
     <div id="resultsModal" class="results-fullscreen hidden">
       
+      <!-- ONBOARDING ANIMATION OVERLAY -->
       <div id="scrollOnboarding" class="scroll-onboarding hidden">
         <div class="onboarding-content">
           <svg class="swipe-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
@@ -248,18 +250,19 @@
           <!-- Comments JS Injected Here -->
         </div>
         
-        <div class="sheet-input-area">
+        <!-- Native Form wrapper allows mobile keyboards to hit Enter/Go to send directly -->
+        <form id="sheetCommentForm" class="sheet-input-area" onsubmit="return false;">
           <div class="input-row" style="margin-bottom: 8px;">
-            <input type="text" id="sheetCommentName" placeholder="Your real name" class="sheet-input short">
-            <input type="password" id="sheetCommentPin" placeholder="4-Digit PIN" inputmode="numeric" maxlength="4" class="sheet-input short" title="PIN required to edit/delete later">
+            <input type="text" id="sheetCommentName" placeholder="Your real name" class="sheet-input short" required>
+            <input type="password" id="sheetCommentPin" placeholder="4-Digit PIN" inputmode="numeric" maxlength="4" class="sheet-input short" title="PIN required to edit/delete later" required pattern="\d{4}">
           </div>
           <div class="input-row">
-            <input type="text" id="sheetCommentText" placeholder="Change the font color..." class="sheet-input long">
-            <button id="sheetSubmitBtn" class="sheet-submit">
+            <input type="text" id="sheetCommentText" placeholder="Change the font color..." class="sheet-input long" required>
+            <button type="submit" id="sheetSubmitBtn" class="sheet-submit">
               <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
           </div>
-        </div>
+        </form>
       </div>
 
       <!-- PIN REMINDER MODAL -->
@@ -281,10 +284,10 @@
           <h3 style="margin-bottom: 10px;">Manage Comment</h3>
           <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 15px;">Enter your 4-digit PIN to confirm your identity.</p>
           
-          <input type="password" id="verifyPinInput" placeholder="PIN" inputmode="numeric" maxlength="4" class="sheet-input long" style="text-align:center; font-size:1.5rem; letter-spacing:8px; margin-bottom: 15px;">
+          <input type="password" id="verifyPinInput" placeholder="PIN" inputmode="numeric" maxlength="4" class="sheet-input long" style="text-align:center; font-size:1.5rem; letter-spacing:8px; margin-bottom: 15px; border-color: #cbd5e1;">
           
           <div id="editArea" class="hidden" style="margin-bottom: 15px;">
-             <input type="text" id="editCommentText" class="sheet-input long" placeholder="Edit comment...">
+             <input type="text" id="editCommentText" class="sheet-input long" placeholder="Edit comment..." style="border-color: #cbd5e1;">
           </div>
 
           <div id="actionButtons" style="display:flex; gap:10px;">
@@ -298,7 +301,7 @@
         </div>
       </div>
 
-      <!-- Keep floating bubbles active alongside bottom sheet -->
+      <!-- Floating bubbles active alongside bottom sheet -->
       <div class="live-comments-stream global-stream" id="floatingStream"></div>
 
     </div>

@@ -460,8 +460,7 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
-// RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PREVENT TEXT HIGHLIGHT
-// CROP & CONTAINMENT FIXES ADDED
+// RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PER-POST UI & EXACT FIT ALIGNMENT
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -500,9 +499,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV13")) {
+    if (!localStorage.getItem("shortsOnboardingV14")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV13")) {
+        if (!localStorage.getItem("shortsOnboardingV14")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -512,8 +511,8 @@ seeResultsBtn.addEventListener("click", () => {
 
 let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV13")) {
-    localStorage.setItem("shortsOnboardingV13", "true");
+  if (!localStorage.getItem("shortsOnboardingV14")) {
+    localStorage.setItem("shortsOnboardingV14", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -561,7 +560,7 @@ const resObserver = new IntersectionObserver((entries) => {
       
       document.getElementById("resultsPagination").innerText = `${realIndex + 1} / ${finalizedSubmissions.length}`;
       
-      listenToLiveFloatingComments(finalizedSubmissions[realIndex].id);
+      listenToLiveFloatingComments(finalizedSubmissions[realIndex].id, domIdx);
       listenToLikes(finalizedSubmissions[realIndex].id, domIdx);
     }
   });
@@ -625,6 +624,8 @@ function buildResultsCarousel() {
           Download Result
         </button>
       </div>
+
+      <div class="live-comments-stream" id="stream-${idx}"></div>
     `;
     
     resultsViewport.appendChild(slide);
@@ -720,9 +721,10 @@ function listenToLikes(submissionId, domIdx) {
   });
 }
 
-function listenToLiveFloatingComments(submissionId) {
+function listenToLiveFloatingComments(submissionId, domIdx) {
   if (activeUnsubComments) activeUnsubComments();
-  const streamEl = document.getElementById("floatingStream");
+  const streamEl = document.getElementById(`stream-${domIdx}`);
+  if(!streamEl) return;
   streamEl.innerHTML = ""; 
   
   const commentsRef = collection(db, "submissions", submissionId, "comments");
@@ -853,7 +855,7 @@ document.getElementById("copyPinBtn").addEventListener("click", () => {
   navigator.clipboard.writeText(pin).then(() => showToast("PIN Copied!"));
 });
 
-function openCommentOptions(cId, cPin, cText) {
+window.openCommentOptions = (cId, cPin, cText) => {
   activeCommentActionId = cId;
   activeCommentActionPin = cPin;
   

@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <!-- LOADING BAR OVERLAY (TRIGGERS AFTER GO IN) -->
+  <!-- LOADING BAR OVERLAY -->
   <div id="entryLoader" class="loading-gate hidden">
     <div class="upload-status-box">
       <div class="spinner-magenta" style="margin-bottom: 25px;"></div>
@@ -21,7 +21,7 @@
     </div>
   </div>
 
-  <!-- ENTRY GATE (SEQUENTIAL FADE-IN) -->
+  <!-- ENTRY GATE -->
   <div id="entryGate" class="entry-gate">
     <div class="entry-modal glass-card">
       <h2 class="step-item delay-1">Welcome to the media uploader</h2>
@@ -96,51 +96,39 @@
       </div>
     </section>
 
-    <!-- NEW EDITING TOOLS FLOW -->
+    <!-- EDITING TOOLS FLOW -->
     <section class="section-container" id="toolsSection" style="display: none;">
       <div class="section-heading">
         <h3>How to edit your photo perfectly</h3>
       </div>
       <div class="glass-card tools-wrapper">
         <div class="tools-flow">
-          
           <div class="tool-step">
             <img id="toolImg1" class="tool-icon" src="" alt="Tool 1 Icon">
             <h4 id="toolTitle1" class="tool-title">Step 1</h4>
             <div class="tool-actions">
               <a id="toolLink1" href="#" target="_blank" class="tool-btn">Open Site</a>
-              <button class="tool-btn tool-copy" onclick="copyToolLink(1)" title="Copy Link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              </button>
+              <button class="tool-btn tool-copy" onclick="copyToolLink(1)" title="Copy Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
             </div>
           </div>
-          
           <div class="tool-arrow"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
-          
           <div class="tool-step">
             <img id="toolImg2" class="tool-icon" src="" alt="Tool 2 Icon">
             <h4 id="toolTitle2" class="tool-title">Step 2</h4>
             <div class="tool-actions">
               <a id="toolLink2" href="#" target="_blank" class="tool-btn">Open Site</a>
-              <button class="tool-btn tool-copy" onclick="copyToolLink(2)" title="Copy Link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              </button>
+              <button class="tool-btn tool-copy" onclick="copyToolLink(2)" title="Copy Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
             </div>
           </div>
-
           <div class="tool-arrow"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
-          
           <div class="tool-step">
             <img id="toolImg3" class="tool-icon" src="" alt="Tool 3 Icon">
             <h4 id="toolTitle3" class="tool-title">Step 3</h4>
             <div class="tool-actions">
               <a id="toolLink3" href="#" target="_blank" class="tool-btn">Open Site</a>
-              <button class="tool-btn tool-copy" onclick="copyToolLink(3)" title="Copy Link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              </button>
+              <button class="tool-btn tool-copy" onclick="copyToolLink(3)" title="Copy Link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
             </div>
           </div>
-
         </div>
       </div>
     </section>
@@ -318,7 +306,6 @@
 
         <div class="admin-card">
           <h4>Process Steps (External Editing Sites)</h4>
-          
           <div style="margin-bottom:15px;">
             <p style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">Step 1 Information</p>
             <div class="admin-row" style="margin-bottom:8px;">
@@ -332,7 +319,6 @@
             </div>
           </div>
           <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-          
           <div style="margin-bottom:15px;">
             <p style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">Step 2 Information</p>
             <div class="admin-row" style="margin-bottom:8px;">
@@ -346,7 +332,6 @@
             </div>
           </div>
           <hr style="border:0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
-
           <div style="margin-bottom:10px;">
             <p style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">Step 3 Information</p>
             <div class="admin-row" style="margin-bottom:8px;">

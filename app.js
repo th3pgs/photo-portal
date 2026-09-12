@@ -460,7 +460,8 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
-// NEW RESULTS LOGIC: PER-POST UI & TRUE IMAGE ALIGNMENT
+// NEW RESULTS LOGIC: BIDIRECTIONAL INFINITE LOOP 
+// PER-POST UI & TRUE IMAGE ALIGNMENT
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -495,9 +496,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV4")) {
+    if (!localStorage.getItem("shortsOnboardingV5")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV4")) {
+        if (!localStorage.getItem("shortsOnboardingV5")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -506,8 +507,8 @@ seeResultsBtn.addEventListener("click", () => {
 });
 
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV4")) {
-    localStorage.setItem("shortsOnboardingV4", "true");
+  if (!localStorage.getItem("shortsOnboardingV5")) {
+    localStorage.setItem("shortsOnboardingV5", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -533,10 +534,17 @@ const resObserver = new IntersectionObserver((entries) => {
       listenToComments(finalizedSubmissions[realIndex].id, domIdx);
       listenToLikes(finalizedSubmissions[realIndex].id, domIdx);
 
-      if (slide.classList.contains("is-clone")) {
+      // Bidirectional Infinite Scroll Logic
+      if (slide.classList.contains("is-bottom-clone")) {
         setTimeout(() => {
-          resultsViewport.scrollTop = 0;
-        }, 400); 
+          const realFirst = document.getElementById("slide-1");
+          if (realFirst) resultsViewport.scrollTop = realFirst.offsetTop;
+        }, 300); 
+      } else if (slide.classList.contains("is-top-clone")) {
+        setTimeout(() => {
+          const realLast = document.getElementById(`slide-${finalizedSubmissions.length}`);
+          if (realLast) resultsViewport.scrollTop = realLast.offsetTop;
+        }, 300);
       }
     }
   });
@@ -545,16 +553,37 @@ const resObserver = new IntersectionObserver((entries) => {
 function buildResultsCarousel() {
   resultsViewport.innerHTML = "";
   
-  let slidesToBuild = [...finalizedSubmissions];
-  if (slidesToBuild.length > 1) {
-    slidesToBuild.push({...slidesToBuild[0], isClone: true});
+  let slidesToBuild = [];
+  if (finalizedSubmissions.length > 1) {
+    // Top Clone (Last item) for scrolling UP
+    slidesToBuild.push({...finalizedSubmissions[finalizedSubmissions.length - 1], isTopClone: true});
+    // Real items
+    slidesToBuild.push(...finalizedSubmissions);
+    // Bottom Clone (First item) for scrolling DOWN
+    slidesToBuild.push({...finalizedSubmissions[0], isBottomClone: true});
+  } else {
+    slidesToBuild = [...finalizedSubmissions];
   }
 
   slidesToBuild.forEach((sub, idx) => {
     const slide = document.createElement("div");
-    slide.className = "result-slide-wrapper" + (sub.isClone ? " is-clone" : "");
+    
+    let classNames = "result-slide-wrapper";
+    if (sub.isTopClone) classNames += " is-top-clone";
+    if (sub.isBottomClone) classNames += " is-bottom-clone";
+    
+    slide.className = classNames;
     slide.dataset.index = idx;
-    slide.dataset.realIndex = sub.isClone ? 0 : idx;
+    
+    let realIndex = idx;
+    if (finalizedSubmissions.length > 1) {
+      if (idx === 0) realIndex = finalizedSubmissions.length - 1; // Top clone
+      else if (idx === slidesToBuild.length - 1) realIndex = 0;   // Bottom clone
+      else realIndex = idx - 1; // Normal items offset by 1
+    }
+    
+    slide.dataset.realIndex = realIndex;
+    slide.id = `slide-${idx}`;
     
     slide.innerHTML = `
       <div class="ba-container">
@@ -592,7 +621,15 @@ function buildResultsCarousel() {
     resObserver.observe(slide);
   });
   
-  resultsViewport.scrollTop = 0;
+  // Set initial scroll position to the first REAL slide (index 1) to allow scrolling up
+  setTimeout(() => {
+    if (finalizedSubmissions.length > 1) {
+      const realFirst = document.getElementById("slide-1");
+      if (realFirst) resultsViewport.scrollTop = realFirst.offsetTop;
+    } else {
+      resultsViewport.scrollTop = 0;
+    }
+  }, 0);
 
   document.querySelectorAll('.tinder-download-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {

@@ -460,8 +460,7 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
-// RESULTS LOGIC: BIDIRECTIONAL INFINITE LOOP 
-// PER-POST UI, TIKTOK STYLE WHITE COMMENTS & TRUE ALIGNMENT
+// RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PREVENT TEXT HIGHLIGHT
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -500,9 +499,9 @@ seeResultsBtn.addEventListener("click", () => {
     resultsModal.classList.remove("hidden");
     buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV11")) {
+    if (!localStorage.getItem("shortsOnboardingV12")) {
       onboardingTimer = setTimeout(() => {
-        if (!localStorage.getItem("shortsOnboardingV11")) {
+        if (!localStorage.getItem("shortsOnboardingV12")) {
           document.getElementById("scrollOnboarding").classList.remove("hidden");
         }
       }, 2000);
@@ -512,8 +511,8 @@ seeResultsBtn.addEventListener("click", () => {
 
 let scrollDebounce;
 resultsViewport.addEventListener("scroll", () => {
-  if (!localStorage.getItem("shortsOnboardingV11")) {
-    localStorage.setItem("shortsOnboardingV11", "true");
+  if (!localStorage.getItem("shortsOnboardingV12")) {
+    localStorage.setItem("shortsOnboardingV12", "true");
     clearTimeout(onboardingTimer);
     document.getElementById("scrollOnboarding").classList.add("hidden");
   }
@@ -601,8 +600,8 @@ function buildResultsCarousel() {
     slide.innerHTML = `
       <div class="ba-container">
         <div class="ba-image-wrapper" id="bacontainer-${idx}">
-          <img src="${sub.finalImageUrl}" class="img-base" draggable="false">
-          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}" draggable="false">
+          <img src="${sub.finalImageUrl}" class="img-base">
+          <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}">
           <div class="slider-handle" id="bahandle-${idx}"></div>
         </div>
       </div>
@@ -732,7 +731,10 @@ function listenToLiveFloatingComments(submissionId) {
         const c = change.doc.data();
         const bubble = document.createElement("div");
         bubble.className = "live-comment-bubble";
-        bubble.innerHTML = `<b>${c.name}:</b> ${c.text}`;
+        
+        // Sanitize for floating bubble
+        const safeText = c.text ? c.text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+        bubble.innerHTML = `<b>${c.name}:</b> ${safeText}`;
         streamEl.prepend(bubble);
         setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 6000);
       }
@@ -747,6 +749,7 @@ const bottomSheetOverlay = document.getElementById("bottomSheetOverlay");
 const tiktokCommentsSheet = document.getElementById("tiktokCommentsSheet");
 
 function openBottomSheet(subId) {
+  if (!subId) return;
   currentModalSubId = subId;
   bottomSheetOverlay.classList.remove("hidden");
   setTimeout(() => tiktokCommentsSheet.classList.add("open"), 10);
@@ -767,18 +770,28 @@ function openBottomSheet(subId) {
       const timeStr = c.timestamp ? timeAgo(c.timestamp.toDate()) : "Just now";
       const initial = c.name ? c.name.charAt(0).toUpperCase() : "?";
       
+      const safeText = c.text ? c.text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+      const safePin = c.pin || '';
+      
       listEl.innerHTML += `
         <div class="sheet-comment-item">
           <div class="sheet-avatar">${initial}</div>
           <div class="sheet-comment-body">
             <span class="sheet-comment-name">${c.name} <span class="sheet-comment-time">${timeStr}</span></span>
-            <p class="sheet-comment-text">${c.text}</p>
+            <p class="sheet-comment-text">${safeText}</p>
           </div>
-          <button class="sheet-comment-options" onclick="openCommentOptions('${cId}', '${c.pin}', '${c.text.replace(/'/g, "\\'")}')">
+          <button class="sheet-comment-options" data-cid="${cId}" data-cpin="${safePin}" data-ctext="${safeText}">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
         </div>
       `;
+    });
+
+    document.querySelectorAll('.sheet-comment-options').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const btnEl = e.currentTarget;
+        openCommentOptions(btnEl.dataset.cid, btnEl.dataset.cpin, btnEl.dataset.ctext);
+      });
     });
   });
 }
@@ -795,7 +808,7 @@ bottomSheetOverlay.addEventListener("click", closeBottomSheet);
 document.getElementById("closeSheetBtn").addEventListener("click", closeBottomSheet);
 
 document.getElementById("sheetCommentForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  e.preventDefault(); 
   
   const name = document.getElementById("sheetCommentName").value.trim();
   const pin = document.getElementById("sheetCommentPin").value.trim();
@@ -803,7 +816,7 @@ document.getElementById("sheetCommentForm").addEventListener("submit", async (e)
   
   if (!name || !text) { showToast("Please fill in your name and comment."); return; }
   if (!/^\d{4}$/.test(pin)) { showToast("PIN must be exactly 4 digits."); return; }
-  if (!currentModalSubId) return;
+  if (!currentModalSubId) { showToast("Error: Missing submission ID."); return; }
   
   const submitBtn = document.getElementById("sheetSubmitBtn");
   submitBtn.disabled = true;
@@ -820,7 +833,11 @@ document.getElementById("sheetCommentForm").addEventListener("submit", async (e)
     document.getElementById("displayPin").innerText = pin;
     document.getElementById("pinReminderModal").classList.remove("hidden");
   } catch (error) {
-    showToast("Failed to post comment.");
+    if (error.message && error.message.includes("permission")) {
+      showToast("Firebase Error: Permission Denied. Check Rules.");
+    } else {
+      showToast("Failed to post comment. Check connection.");
+    }
     console.error(error);
   } finally {
     submitBtn.disabled = false;
@@ -836,8 +853,7 @@ document.getElementById("copyPinBtn").addEventListener("click", () => {
   navigator.clipboard.writeText(pin).then(() => showToast("PIN Copied!"));
 });
 
-// Edit & Delete Options Logic
-window.openCommentOptions = (cId, cPin, cText) => {
+function openCommentOptions(cId, cPin, cText) {
   activeCommentActionId = cId;
   activeCommentActionPin = cPin;
   
@@ -845,10 +861,13 @@ window.openCommentOptions = (cId, cPin, cText) => {
   document.getElementById("editArea").classList.add("hidden");
   document.getElementById("actionButtons").style.display = "flex";
   document.getElementById("saveEditBtn").classList.add("hidden");
-  document.getElementById("editCommentText").value = cText;
+  
+  const decoder = document.createElement("div");
+  decoder.innerHTML = cText;
+  document.getElementById("editCommentText").value = decoder.textContent;
   
   document.getElementById("commentActionModal").classList.remove("hidden");
-};
+}
 
 document.getElementById("cancelActionBtn").addEventListener("click", () => {
   document.getElementById("commentActionModal").classList.add("hidden");

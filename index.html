@@ -233,6 +233,7 @@
         <span id="resultsPagination">1 / 1</span>
       </div>
 
+      <!-- Native Vertical Scrolling Viewport -->
       <div class="results-carousel-viewport" id="resultsViewport">
         <!-- Slides mapped dynamically -->
       </div>
@@ -250,8 +251,8 @@
           <!-- Comments JS Injected Here -->
         </div>
         
-        <!-- Native Form wrapper allows mobile keyboards to hit Enter/Go to send directly -->
-        <form id="sheetCommentForm" class="sheet-input-area" onsubmit="return false;">
+        <!-- Pure native form tag. Removed legacy inline onsubmit logic -->
+        <form id="sheetCommentForm" class="sheet-input-area">
           <div class="input-row" style="margin-bottom: 8px;">
             <input type="text" id="sheetCommentName" placeholder="Your real name" class="sheet-input short" required>
             <input type="password" id="sheetCommentPin" placeholder="4-Digit PIN" inputmode="numeric" maxlength="4" class="sheet-input short" title="PIN required to edit/delete later" required pattern="\d{4}">

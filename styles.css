@@ -222,7 +222,6 @@ input[type="text"]:focus { border-color: var(--text-main); box-shadow: 0 0 0 3px
 .btn-confirm-del { background: var(--accent-red); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 .btn-danger { background: #fee2e2; color: var(--accent-red); border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
 
-/* FIXED: Removed pointer-events: none; so the admin can always click the buttons */
 .is-editing-admin { opacity: 0.6; filter: grayscale(0.8); position: relative; }
 .is-editing-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: bold; z-index: 10; font-size: 1rem;}
 
@@ -267,3 +266,53 @@ mark { background: #fef08a; color: #0f172a; padding: 2px 6px; border-radius: 4px
   box-shadow: 0 0 15px rgba(255, 0, 60, 0.4) !important;
   color: #ffffff !important;
 }
+
+/* ---------------------------------------------------
+   NEW: IG LIVE STYLE RESULTS UI
+--------------------------------------------------- */
+.btn-green {
+  width: 100%; background: #22c55e; color: #fff; border: none; border-radius: 12px; 
+  padding: 1.1rem; font-size: 1rem; font-weight: 800; cursor: pointer; 
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); transition: transform 0.2s;
+}
+.btn-green:active { transform: scale(0.96); }
+
+.results-fullscreen {
+  position: fixed; inset: 0; background: #000; z-index: 100000;
+  display: flex; flex-direction: column; overflow: hidden;
+  animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.results-top-bar {
+  display: flex; justify-content: space-between; padding: 20px; z-index: 10;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+}
+#resultsPagination { color: white; font-weight: bold; background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px; }
+.btn-close-results { background: transparent; border: none; cursor: pointer; }
+
+.results-carousel-viewport { flex: 1; position: relative; display: flex; align-items: center; justify-content: center;}
+.results-track { display: flex; width: 100%; height: 100%; transition: transform 0.4s ease-in-out; }
+.result-slide-wrapper { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative;}
+
+.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; z-index: 50; transition: 0.3s; }
+.left-arrow { left: 15px; } .right-arrow { right: 15px; }
+.nav-arrow:hover { background: rgba(255,255,255,0.5); }
+
+.ba-container { position: relative; width: 100%; max-width: 500px; aspect-ratio: 4/5; overflow: hidden; border-radius: 12px; touch-action: pan-y; }
+.img-after, .img-before { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none;}
+.img-before-wrapper { position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; border-right: 2px solid white; z-index: 2; pointer-events: none;}
+.slider-handle { position: absolute; top: 0; bottom: 0; left: 50%; width: 40px; margin-left: -20px; cursor: ew-resize; z-index: 3; display: flex; align-items: center; justify-content: center; touch-action: pan-y; }
+.slider-handle::after { content: '< >'; background: white; color: black; font-weight: bold; border-radius: 20px; padding: 4px 6px; font-size: 0.7rem; box-shadow: 0 0 10px rgba(0,0,0,0.5); pointer-events: none;}
+
+.live-comments-stream { position: absolute; bottom: 180px; left: 20px; width: 70%; max-height: 250px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; z-index: 10; pointer-events: none; }
+.live-comment-bubble { background: rgba(0,0,0,0.6); color: white; padding: 8px 12px; border-radius: 16px; margin-top: 6px; width: fit-content; max-width: 100%; word-wrap: break-word; font-size: 0.85rem; animation: floatUp 4s ease-out forwards; }
+.live-comment-bubble b { color: #facc15; }
+@keyframes floatUp { 0% { transform: translateY(20px); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 80% { transform: translateY(-40px); opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+
+.results-bottom-panel { padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: white; z-index: 10; }
+.action-buttons-row { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+.btn-comment { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: white; padding: 12px; border-radius: 24px; text-align: left; padding-left: 20px; cursor: pointer; }
+.btn-download-big { background: #2563eb; color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
+
+.comment-input-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100001; display: flex; align-items: flex-end; padding: 20px; }
+.comment-box { background: white; width: 100%; padding: 20px; border-radius: 16px; color: black; }
+.comment-input { width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 1rem; }

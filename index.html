@@ -30,7 +30,8 @@
         <p class="step-item delay-2"><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
         <p class="step-item delay-3"><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
       </div>
-      <button id="enterSiteBtn" class="btn-yellow delay-btn">Go In</button>
+      <button id="enterSiteBtn" class="btn-yellow delay-btn">Go learn and upload</button>
+      <button id="seeResultsBtn" class="btn-green delay-btn" style="margin-top: 12px;">See results</button>
     </div>
   </div>
 
@@ -242,6 +243,55 @@
     </section>
     
     <footer id="secretTrigger" class="secret-pad"></footer>
+
+    <!-- IG LIVE STYLE RESULTS WINDOW -->
+    <div id="resultsModal" class="results-fullscreen hidden">
+      <div class="results-top-bar">
+        <span id="resultsPagination">1 / 1</span>
+        <button id="closeResultsBtn" class="btn-close-results">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="results-carousel-viewport" id="resultsViewport">
+        <div class="results-track" id="resultsTrack">
+          <!-- Slides injected via JS -->
+        </div>
+        
+        <!-- Touch Navigation Arrows -->
+        <button class="nav-arrow left-arrow hidden" id="resPrev">&#10094;</button>
+        <button class="nav-arrow right-arrow hidden" id="resNext">&#10095;</button>
+      </div>
+
+      <!-- Live Comments Overlay (WeChat Style) -->
+      <div id="liveCommentsStream" class="live-comments-stream"></div>
+
+      <div class="results-bottom-panel">
+        <div class="user-info-block">
+          <h3 id="resFirstName">Name</h3>
+          <p id="resLastName" style="font-size:0.9rem; margin-top:-3px;">Lastname</p>
+          <p id="resRole" style="color:#cbd5e1; font-size:0.85rem;">Job Title</p>
+        </div>
+        
+        <div class="action-buttons-row">
+          <button id="triggerCommentBtn" class="btn-comment">Add a comment</button>
+          <button id="downloadFinalBtn" class="btn-download-big">Download High Quality</button>
+        </div>
+      </div>
+
+      <!-- Comment Input Modal -->
+      <div id="commentInputOverlay" class="comment-input-overlay hidden">
+        <div class="comment-box">
+          <h4 style="margin-bottom:10px;">Add a Comment</h4>
+          <input type="text" id="commentRealName" placeholder="Please add your real name" class="comment-input">
+          <input type="text" id="commentText" placeholder="Change font color, give a ❤️..." class="comment-input">
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button id="cancelCommentBtn" class="btn-secondary">Cancel</button>
+            <button id="submitCommentBtn" class="btn-glow">Post</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- ADMIN DASHBOARD -->

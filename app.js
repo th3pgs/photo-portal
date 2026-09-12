@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot, query, orderBy, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -24,11 +24,10 @@ let deadlineDate = null;
 let timerInterval = null;
 let cachedAdmin = false;
 let isIntroGliding = false; 
-let isVideoPrepping = false; // Prevents icon flashes during the autoplay buffer trick
+let isVideoPrepping = false;
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
-// JS Smooth Scroll Engine
 function smoothScrollToY(endY, duration) {
   const startY = window.scrollY || window.pageYOffset;
   const distance = endY - startY;
@@ -73,7 +72,6 @@ function timeAgo(date) {
   return "Just now";
 }
 
-// Gate Unlock, Loading Screen & Revisit Logic
 const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
@@ -85,7 +83,6 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   entryGate.style.display = "none"; 
   entryLoader.classList.remove("hidden");
   
-  // Autoplay Prep Trick with UI Shielding
   if (video.src && video.src !== window.location.href) {
     isVideoPrepping = true; 
     const ppBtn = document.getElementById("btnPlayPause");
@@ -166,7 +163,6 @@ document.getElementById("enterSiteBtn").addEventListener("click", () => {
   }, 3000); 
 });
 
-// Mini-Player Logic
 const videoContainer = document.getElementById("videoContainer");
 const videoObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
@@ -182,7 +178,6 @@ const videoObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 videoObserver.observe(document.getElementById("videoSection"));
 
-// Carousel
 const track = document.getElementById("carouselTrack");
 let carTimer;
 
@@ -226,7 +221,6 @@ function initCarousel() {
   }
 }
 
-// Custom Controls
 const ppBtn = document.getElementById("btnPlayPause");
 const seek = document.getElementById("seekSlider");
 const vol = document.getElementById("volumeSlider");
@@ -264,7 +258,6 @@ window.copyToolLink = (num) => {
   }
 };
 
-// Config Sync
 onSnapshot(doc(db, "config", "settings"), (snap) => {
   if (snap.exists()) {
     const d = snap.data();
@@ -335,7 +328,6 @@ let uploadTime = localStorage.getItem("mySubTime") || 0;
 
 const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
-// Unified Leaderboard with 5-Min Edit Timeout Lock
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList");
   const regList = document.getElementById("rosterList");
@@ -349,7 +341,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const id = docSnap.id;
     const now = Date.now();
     
-    // FIX: Using 0 instead of 'now' ensures legacy stuck users instantly trigger the 5-minute timeout.
     const editTime = d.editTimestamp || 0;
     const isTimeout = d.isEditing && (now - editTime > 300000); 
 
@@ -400,6 +391,10 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
     const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
 
+    let finalUploadBtn = !d.finalImageUrl 
+      ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
+      : `<span class="edit-badge" style="width:100%; margin-bottom:0;">Finalized & Live</span>`;
+
     gallery.innerHTML += `
       <div class="gallery-card ${editingClass}" id="gal-${id}">
         ${editingBadge}
@@ -410,6 +405,9 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
             <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}'); showToast('Copied!')">Copy Info</button>
             ${dlBtn}
           </div>
+          <div style="display:flex; gap:8px; margin-bottom: 10px;">
+             ${finalUploadBtn}
+          </div>
           <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
           <div class="del-req-box hidden" id="delbox-${id}">
             <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
@@ -419,6 +417,21 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
       </div>`;
   });
 });
+
+window.triggerFinalUpload = async (subId) => {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const url = await adminCloudUploadWithProgress(file, "Uploading Final Image...");
+      await setDoc(doc(db, "submissions", subId), { finalImageUrl: url }, { merge: true });
+      showToast("Finalized Image Paired!");
+    } catch(err) { showToast("Upload failed."); }
+  };
+  input.click();
+};
 
 window.showDeleteConfirm = (id) => document.getElementById(`delbox-${id}`).classList.remove("hidden");
 window.executeDelete = async (id) => {
@@ -454,7 +467,6 @@ window.triggerUserEdit = async (f, l, r) => {
   } catch(e){}
 };
 
-// Main Upload
 let selectedFile = null;
 const fileInput = document.getElementById("fileInput");
 fileInput.addEventListener("change", (e) => {
@@ -580,7 +592,6 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   );
 });
 
-// Admin Logic
 let taps = 0, lastTap = 0;
 document.getElementById("secretTrigger").addEventListener("click", () => {
   const now = Date.now(); if (now - lastTap < 500) taps++; else taps = 1; lastTap = now;
@@ -691,4 +702,197 @@ document.getElementById("seedBtn").addEventListener("click", async () => {
   if (!f.value || !l.value) return;
   await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() });
   f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!");
+});
+
+
+// -------------------------------------------------------------
+// NEW RESULTS MODAL & CAROUSEL LOGIC
+// -------------------------------------------------------------
+const resultsModal = document.getElementById("resultsModal");
+const seeResultsBtn = document.getElementById("seeResultsBtn");
+const resultsTrack = document.getElementById("resultsTrack");
+const liveCommentsStream = document.getElementById("liveCommentsStream");
+
+let finalizedSubmissions = [];
+let currentResIndex = 0;
+let resAutoSlideTimer;
+let isResInteracting = false;
+let activeUnsubComments = null;
+
+onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
+  finalizedSubmissions = [];
+  snap.forEach(doc => {
+    const data = doc.data();
+    if (data.imageUrl && data.finalImageUrl) {
+      finalizedSubmissions.push({ id: doc.id, ...data });
+    }
+  });
+});
+
+seeResultsBtn.addEventListener("click", () => {
+  if (finalizedSubmissions.length === 0) {
+    showToast("No finalized results available yet.");
+    return;
+  }
+  document.getElementById("entryGate").style.display = "none";
+  entryLoader.classList.remove("hidden");
+  
+  setTimeout(() => {
+    entryLoader.classList.add("hidden");
+    resultsModal.classList.remove("hidden");
+    buildResultsCarousel();
+  }, 1200);
+});
+
+document.getElementById("closeResultsBtn").addEventListener("click", () => {
+  resultsModal.classList.add("hidden");
+  document.getElementById("entryGate").style.display = "flex";
+  clearInterval(resAutoSlideTimer);
+  if (activeUnsubComments) activeUnsubComments();
+});
+
+function buildResultsCarousel() {
+  resultsTrack.innerHTML = "";
+  finalizedSubmissions.forEach((sub, idx) => {
+    const slide = document.createElement("div");
+    slide.className = "result-slide-wrapper";
+    slide.innerHTML = `
+      <div class="ba-container" id="bacontainer-${idx}">
+        <img src="${sub.finalImageUrl}" class="img-after">
+        <div class="img-before-wrapper" id="bawrap-${idx}">
+          <img src="${sub.imageUrl}" class="img-before">
+        </div>
+        <div class="slider-handle" id="bahandle-${idx}"></div>
+      </div>
+    `;
+    resultsTrack.appendChild(slide);
+    initBeforeAfterSlider(idx);
+  });
+  
+  updateResultView(0);
+  startResAutoSlide();
+}
+
+function initBeforeAfterSlider(idx) {
+  const container = document.getElementById(`bacontainer-${idx}`);
+  const wrapper = document.getElementById(`bawrap-${idx}`);
+  const handle = document.getElementById(`bahandle-${idx}`);
+  let isDragging = false;
+
+  const moveSlider = (e) => {
+    if (!isDragging) return;
+    isResInteracting = true;
+    let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const rect = container.getBoundingClientRect();
+    let x = clientX - rect.left;
+    if (x < 0) x = 0; if (x > rect.width) x = rect.width;
+    const percent = (x / rect.width) * 100;
+    wrapper.style.width = `${percent}%`;
+    handle.style.left = `${percent}%`;
+  };
+
+  handle.addEventListener("mousedown", () => isDragging = true);
+  handle.addEventListener("touchstart", () => isDragging = true, {passive: true});
+  window.addEventListener("mouseup", () => { isDragging = false; isResInteracting = false; });
+  window.addEventListener("touchend", () => { isDragging = false; isResInteracting = false; });
+  window.addEventListener("mousemove", moveSlider);
+  window.addEventListener("touchmove", moveSlider, {passive: true});
+}
+
+function updateResultView(idx) {
+  currentResIndex = idx;
+  resultsTrack.style.transform = `translateX(-${currentResIndex * 100}%)`;
+  document.getElementById("resultsPagination").innerText = `${currentResIndex + 1} / ${finalizedSubmissions.length}`;
+  
+  const currentData = finalizedSubmissions[currentResIndex];
+  document.getElementById("resFirstName").innerText = currentData.firstName;
+  document.getElementById("resLastName").innerText = currentData.lastName;
+  document.getElementById("resRole").innerText = currentData.role;
+  
+  listenToComments(currentData.id);
+}
+
+function nextResSlide() { if (currentResIndex < finalizedSubmissions.length - 1) updateResultView(currentResIndex + 1); else updateResultView(0); }
+function prevResSlide() { if (currentResIndex > 0) updateResultView(currentResIndex - 1); else updateResultView(finalizedSubmissions.length - 1); }
+
+document.getElementById("resNext").addEventListener("click", nextResSlide);
+document.getElementById("resPrev").addEventListener("click", prevResSlide);
+
+function startResAutoSlide() {
+  clearInterval(resAutoSlideTimer);
+  resAutoSlideTimer = setInterval(() => { if (!isResInteracting) nextResSlide(); }, 6000);
+}
+
+const resViewport = document.getElementById("resultsViewport");
+const resArrL = document.getElementById("resPrev");
+const resArrR = document.getElementById("resNext");
+
+resViewport.addEventListener("mouseenter", () => { resArrL.classList.remove("hidden"); resArrR.classList.remove("hidden"); isResInteracting = true; });
+resViewport.addEventListener("mouseleave", () => { resArrL.classList.add("hidden"); resArrR.classList.add("hidden"); isResInteracting = false; });
+resViewport.addEventListener("touchstart", () => { resArrL.classList.remove("hidden"); resArrR.classList.remove("hidden"); isResInteracting = true; }, {passive: true});
+resViewport.addEventListener("touchend", () => { setTimeout(()=> {isResInteracting = false;}, 2000); });
+
+document.getElementById("downloadFinalBtn").addEventListener("click", async () => {
+  const currentData = finalizedSubmissions[currentResIndex];
+  showToast("Preparing high quality download...");
+  try {
+    const response = await fetch(currentData.finalImageUrl);
+    const blob = await response.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${currentData.firstName}_${currentData.lastName}_Final.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    showToast("Direct download blocked by browser. Opening in new tab.");
+    window.open(currentData.finalImageUrl, "_blank");
+  }
+});
+
+function listenToComments(submissionId) {
+  if (activeUnsubComments) activeUnsubComments();
+  liveCommentsStream.innerHTML = ""; 
+  
+  const commentsRef = collection(db, "submissions", submissionId, "comments");
+  activeUnsubComments = onSnapshot(query(commentsRef, orderBy("timestamp", "desc")), (snap) => {
+    snap.docChanges().forEach(change => {
+      if (change.type === "added") {
+        const c = change.doc.data();
+        const bubble = document.createElement("div");
+        bubble.className = "live-comment-bubble";
+        bubble.innerHTML = `<b>${c.name}:</b> ${c.text}`;
+        liveCommentsStream.appendChild(bubble);
+        
+        setTimeout(() => { if (bubble.parentNode) bubble.remove(); }, 3900);
+      }
+    });
+  });
+}
+
+const commentInputOverlay = document.getElementById("commentInputOverlay");
+document.getElementById("triggerCommentBtn").addEventListener("click", () => {
+  isResInteracting = true;
+  commentInputOverlay.classList.remove("hidden");
+});
+document.getElementById("cancelCommentBtn").addEventListener("click", () => {
+  isResInteracting = false;
+  commentInputOverlay.classList.add("hidden");
+});
+document.getElementById("submitCommentBtn").addEventListener("click", async () => {
+  const name = document.getElementById("commentRealName").value.trim();
+  const text = document.getElementById("commentText").value.trim();
+  
+  if (!name || !text) { showToast("Please enter your real name and a comment."); return; }
+  
+  const currentData = finalizedSubmissions[currentResIndex];
+  await addDoc(collection(db, "submissions", currentData.id, "comments"), {
+    name: name,
+    text: text,
+    timestamp: serverTimestamp()
+  });
+  
+  document.getElementById("commentText").value = "";
+  commentInputOverlay.classList.add("hidden");
+  isResInteracting = false;
 });

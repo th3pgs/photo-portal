@@ -321,6 +321,7 @@
       <h2>Editor Dashboard</h2>
       <button id="tabSettings" class="admin-tab active">System Configuration</button>
       <button id="tabGallery" class="admin-tab">Media Gallery</button>
+      <button id="tabOrder" class="admin-tab">Presentation Order</button>
       <button id="closeAdminBtn" class="btn-close-admin">Exit Dashboard</button>
     </div>
     
@@ -422,6 +423,34 @@
         </div>
         <div class="gallery-grid" id="adminGallery"></div>
       </div>
+
+      <!-- NEW PRESENTATION ORDER TAB -->
+      <div id="viewOrder" class="admin-view hidden">
+        <div class="admin-header">
+          <h3>Presentation Order & Standalone</h3>
+          <p>Drag and drop to rearrange the final viewing order. Add standalone posts (like Intros/Outros) here.</p>
+        </div>
+
+        <div class="admin-card">
+          <h4>Add Standalone Post (No Slider)</h4>
+          <div class="admin-row">
+            <input type="text" id="standaloneTitle" placeholder="Title (e.g. Intro Post)" style="flex:1" />
+            <input type="file" id="standaloneFile" accept="image/*" />
+            <button id="addStandaloneBtn" class="btn-admin-action green-btn">Upload & Add</button>
+          </div>
+        </div>
+
+        <div class="admin-card" style="max-width: 800px;">
+          <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 15px;">
+            <h4>Current Viewing Order</h4>
+            <button id="saveOrderBtn" class="btn-admin-action" style="background: #2563eb; color: white;">Save New Order</button>
+          </div>
+          <div id="draggableOrderList" class="drag-list">
+            <!-- Items Injected by JS -->
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 

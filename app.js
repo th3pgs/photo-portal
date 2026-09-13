@@ -235,7 +235,7 @@ const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline p
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList"); const regList = document.getElementById("rosterList"); const gallery = document.getElementById("adminGallery");
   orgList.innerHTML = ""; regList.innerHTML = ""; gallery.innerHTML = "";
-  document.getElementById("rosterCounter").textContent = `${snap.size} Uploads`;
+  let counter = 0;
   let rank = 1;
 
   snap.forEach((docSnap) => {
@@ -243,28 +243,34 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const editTime = d.editTimestamp || 0; const isTimeout = d.isEditing && (now - editTime > 300000); 
 
     if (isTimeout && id === myId && d.isEditing) { setDoc(doc(db, "submissions", myId), { isEditing: false }, { merge: true }); localStorage.removeItem("isEditingLocal"); d.isEditing = false; }
-    const canEdit = (id === myId && (now - uploadTime) < 300000); 
-    const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
     
-    let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : now) : now;
-    const timeText = timeAgo(new Date(tsMillis));
-    
-    let statusHtml = "";
-    if (d.isEditing && !isTimeout) { statusHtml = `<span class="editing-text">Editing...</span>`; } 
-    else { statusHtml = `${editBtn}<span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>${tickIcon}`; }
+    // Skip standalone posts in the main user roster
+    if(!d.isStandalone) {
+        counter++;
+        const canEdit = (id === myId && (now - uploadTime) < 300000); 
+        const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
+        
+        let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : now) : now;
+        const timeText = timeAgo(new Date(tsMillis));
+        
+        let statusHtml = "";
+        if (d.isEditing && !isTimeout) { statusHtml = `<span class="editing-text">Editing...</span>`; } 
+        else { statusHtml = `${editBtn}<span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>${tickIcon}`; }
 
-    const cardHtml = `
-      <div class="chess-row">
-        ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
-        <div class="chess-details">
-          <span class="chess-name">${d.firstName} <span style="font-weight:400;">${d.lastName}</span></span>
-          <span class="chess-role">${d.role}</span>
-        </div>
-        <div class="chess-status">${statusHtml}</div>
-      </div>`;
-    
-    d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
+        const cardHtml = `
+          <div class="chess-row">
+            ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
+            <div class="chess-details">
+              <span class="chess-name">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
+              <span class="chess-role">${d.role || ''}</span>
+            </div>
+            <div class="chess-status">${statusHtml}</div>
+          </div>`;
+        
+        d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
+    }
 
+    // Populate Admin Gallery (Includes Standalones)
     let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`; let dlBtn = ''; let beforeUploadBtn = '';
     
     if (d.imageUrl) {
@@ -272,6 +278,9 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
       } else { imgHtml = `<img src="${d.imageUrl}">`; }
       dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
+    } else if (d.isStandalone && d.finalImageUrl) {
+      imgHtml = `<img src="${d.finalImageUrl}">`;
+      dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.finalImageUrl}', '_blank')">Download Final</button>`;
     } else {
       beforeUploadBtn = `<button class="btn-admin-action" style="flex:1; background:#3b82f6; color:white; border:none;" onclick="triggerBeforeUpload('${id}')">Upload Before</button>`;
     }
@@ -279,18 +288,23 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
     const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
 
-    let finalUploadBtn = !d.finalImageUrl 
-      ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
-      : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
-         <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
+    let finalUploadBtn = "";
+    if (d.isStandalone) {
+      finalUploadBtn = `<span class="editing-text" style="color: #2563eb; width: 100%; text-align: center; margin-bottom: 5px;">Standalone Post</span>`;
+    } else {
+      finalUploadBtn = !d.finalImageUrl 
+        ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
+        : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
+           <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
+    }
 
     gallery.innerHTML += `
       <div class="gallery-card ${editingClass}" id="gal-${id}">
         ${editingBadge} ${imgHtml}
         <div class="gallery-info">
-          <h4>${d.firstName} ${d.lastName}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role}</p>
+          <h4>${d.firstName} ${d.lastName || ''}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role || 'No Role'}</p>
           <div style="display:flex; gap:8px; margin-bottom: 10px;">
-            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName} - ${d.role}'); showToast('Copied!')">Copy Info</button>
+            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName || ''} - ${d.role || ''}'); showToast('Copied!')">Copy Info</button>
             ${dlBtn} ${beforeUploadBtn}
           </div>
           <div style="display:flex; gap:8px; margin-bottom: 10px;">${finalUploadBtn}</div>
@@ -302,6 +316,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         </div>
       </div>`;
   });
+  document.getElementById("rosterCounter").textContent = `${counter} Uploads`;
 });
 
 window.triggerFinalUpload = async (subId) => {
@@ -429,8 +444,16 @@ document.getElementById("secretTrigger").addEventListener("click", () => {
 });
 document.getElementById("closeAdminBtn").addEventListener("click", () => document.getElementById("adminPanel").classList.add("hidden"));
 
-document.getElementById("tabSettings").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabGallery").classList.remove("active"); document.getElementById("viewSettings").classList.remove("hidden"); document.getElementById("viewGallery").classList.add("hidden"); });
-document.getElementById("tabGallery").addEventListener("click", (e) => { e.target.classList.add("active"); document.getElementById("tabSettings").classList.remove("active"); document.getElementById("viewGallery").classList.remove("hidden"); document.getElementById("viewSettings").classList.add("hidden"); });
+// Admin Tab Switching
+function switchAdminTab(activeTabId, activeViewId) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.admin-view').forEach(v => v.classList.add('hidden'));
+  document.getElementById(activeTabId).classList.add('active');
+  document.getElementById(activeViewId).classList.remove('hidden');
+}
+document.getElementById("tabSettings").addEventListener("click", () => switchAdminTab("tabSettings", "viewSettings"));
+document.getElementById("tabGallery").addEventListener("click", () => switchAdminTab("tabGallery", "viewGallery"));
+document.getElementById("tabOrder").addEventListener("click", () => { switchAdminTab("tabOrder", "viewOrder"); renderDraggableList(); });
 
 function adminCloudUploadWithProgress(file, labelTitle) {
   return new Promise((resolve, reject) => {
@@ -460,6 +483,108 @@ document.getElementById("removeImgBtn2").addEventListener("click", async () => {
 document.getElementById("seedBtn").addEventListener("click", async () => { const f = document.getElementById("seedFirst"); const l = document.getElementById("seedLast"); const r = document.getElementById("seedRole"); if (!f.value || !l.value) return; await setDoc(doc(collection(db, "submissions")), { firstName: f.value, lastName: l.value, role: r.value, isOrganizer: true, time: serverTimestamp() }); f.value = ""; l.value = ""; r.value = ""; showToast("User added to leaderboard!"); });
 
 // -------------------------------------------------------------
+// STANDALONE UPLOADS & DRAG & DROP ORDERING
+// -------------------------------------------------------------
+let isDraggingItem = false;
+
+document.getElementById("addStandaloneBtn").addEventListener("click", async () => {
+  const file = document.getElementById("standaloneFile").files[0];
+  const title = document.getElementById("standaloneTitle").value.trim() || "Standalone Post";
+  if (!file) { showToast("Please select an image for the standalone post."); return; }
+  
+  try {
+     const url = await adminCloudUploadWithProgress(file, "Uploading Standalone...");
+     await addDoc(collection(db, "submissions"), {
+        isStandalone: true,
+        finalImageUrl: url,
+        firstName: title,
+        lastName: "",
+        role: "",
+        order: finalizedSubmissions.length, 
+        time: serverTimestamp()
+     });
+     document.getElementById("standaloneFile").value = "";
+     document.getElementById("standaloneTitle").value = "";
+     showToast("Standalone Post Added!");
+  } catch (e) {
+     showToast("Failed to upload standalone post.");
+  }
+});
+
+function renderDraggableList() {
+  if (isDraggingItem) return;
+  const listEl = document.getElementById("draggableOrderList");
+  listEl.innerHTML = "";
+  
+  finalizedSubmissions.forEach((sub, index) => {
+     const item = document.createElement("div");
+     item.className = "drag-item";
+     item.draggable = true;
+     item.dataset.id = sub.id;
+     item.innerHTML = `
+        <div class="drag-handle">☰</div>
+        <img src="${sub.finalImageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin: 0 15px;">
+        <div style="flex:1;">
+          <strong>${sub.firstName} ${sub.lastName || ''}</strong>
+          ${sub.isStandalone ? '<span class="standalone-badge">Standalone</span>' : ''}
+        </div>
+        <button class="btn-admin-danger btn-remove-standalone" style="padding: 5px 10px; font-size: 0.8rem;" data-id="${sub.id}" ${!sub.isStandalone ? 'style="display:none;"' : ''}>Delete</button>
+     `;
+
+     item.addEventListener("dragstart", () => { isDraggingItem = true; item.classList.add("dragging"); });
+     item.addEventListener("dragend", () => { isDraggingItem = false; item.classList.remove("dragging"); });
+     listEl.appendChild(item);
+  });
+  setupDragEvents(listEl);
+}
+
+function setupDragEvents(listEl) {
+  listEl.addEventListener("dragover", (e) => {
+     e.preventDefault();
+     const afterElement = getDragAfterElement(listEl, e.clientY);
+     const dragging = document.querySelector(".dragging");
+     if (!dragging) return;
+     if (afterElement == null) { listEl.appendChild(dragging); } 
+     else { listEl.insertBefore(dragging, afterElement); }
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.drag-item:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+     const box = child.getBoundingClientRect();
+     const offset = y - box.top - box.height / 2;
+     if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+     else { return closest; }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+document.getElementById("saveOrderBtn").addEventListener("click", async () => {
+  const listEl = document.getElementById("draggableOrderList");
+  const items = [...listEl.querySelectorAll('.drag-item')];
+  showToast("Saving custom order...");
+  let promises = [];
+  items.forEach((item, newIndex) => {
+     const id = item.dataset.id;
+     promises.push(updateDoc(doc(db, "submissions", id), { order: newIndex }));
+  });
+  try {
+     await Promise.all(promises);
+     showToast("Order saved successfully!");
+  } catch(e) { showToast("Failed to save order."); }
+});
+
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("btn-remove-standalone")) {
+     if (confirm("Delete this standalone post permanently?")) {
+        await deleteDoc(doc(db, "submissions", e.target.dataset.id));
+        showToast("Standalone post deleted.");
+     }
+  }
+});
+
+
+// -------------------------------------------------------------
 // RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PER-POST UI 
 // DANMAKU MIDDLE-SCREEN LIVE STREAM & COUNTERS
 // -------------------------------------------------------------
@@ -468,6 +593,7 @@ const seeResultsBtn = document.getElementById("seeResultsBtn");
 const resultsViewport = document.getElementById("resultsViewport");
 
 let finalizedSubmissions = [];
+let resultsLoaded = false;
 let onboardingTimer = null;
 let activeUnsubComments = null;
 let activeUnsubSheetComments = null;
@@ -478,20 +604,43 @@ let activeCommentActionId = null;
 let activeCommentActionPin = null;
 
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
-  finalizedSubmissions = [];
+  let tempSubs = [];
   snap.forEach(doc => {
     const data = doc.data();
-    if (data.imageUrl && data.finalImageUrl) {
-      finalizedSubmissions.push({ id: doc.id, ...data });
+    if (data.finalImageUrl) { // Includes both standalones and final paired edits
+      tempSubs.push({ id: doc.id, ...data });
     }
   });
+
+  // Sort logically by custom order first, then fallback to time
+  tempSubs.sort((a, b) => {
+    let orderA = a.order !== undefined ? a.order : 9999;
+    let orderB = b.order !== undefined ? b.order : 9999;
+    if (orderA !== orderB) return orderA - orderB;
+    let timeA = a.time ? (a.time.toMillis ? a.time.toMillis() : 0) : 0;
+    let timeB = b.time ? (b.time.toMillis ? b.time.toMillis() : 0) : 0;
+    return timeA - timeB;
+  });
+
+  finalizedSubmissions = tempSubs;
+  resultsLoaded = true;
+
+  if (document.getElementById("viewOrder") && !document.getElementById("viewOrder").classList.contains("hidden")) {
+     renderDraggableList();
+  }
 });
 
 seeResultsBtn.addEventListener("click", () => {
+  if (!resultsLoaded) {
+    showToast("Fetching designs from server, please wait a moment...");
+    return;
+  }
+
   if (finalizedSubmissions.length === 0) {
     showToast("No finalized results available yet.");
     return;
   }
+  
   document.getElementById("entryGate").style.display = "none";
   entryLoader.classList.remove("hidden");
   
@@ -507,7 +656,7 @@ seeResultsBtn.addEventListener("click", () => {
         }
       }, 2000);
     }
-  }, 1200);
+  }, 400); // Reduced loading delay
 });
 
 let scrollDebounce;
@@ -598,13 +747,26 @@ function buildResultsCarousel() {
     slide.dataset.realIndex = realIndex;
     slide.id = `slide-${idx}`;
     
-    slide.innerHTML = `
-      <div class="ba-container">
+    let imageContentHtml = "";
+    if (sub.isStandalone) {
+      imageContentHtml = `
+        <div class="ba-image-wrapper" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+          <img src="${sub.finalImageUrl}" class="img-base" style="object-fit: contain; width: 100%; height: 100%;" draggable="false">
+        </div>
+      `;
+    } else {
+      imageContentHtml = `
         <div class="ba-image-wrapper" id="bacontainer-${idx}">
           <img src="${sub.finalImageUrl}" class="img-base" draggable="false">
           <img src="${sub.imageUrl}" class="img-overlay" id="baoverlay-${idx}" draggable="false">
           <div class="slider-handle" id="bahandle-${idx}"></div>
         </div>
+      `;
+    }
+
+    slide.innerHTML = `
+      <div class="ba-container">
+        ${imageContentHtml}
       </div>
       
       <div class="shorts-action-bar">
@@ -619,9 +781,9 @@ function buildResultsCarousel() {
       </div>
 
       <div class="tinder-info-bar">
-        <h2>${sub.firstName} <span style="font-weight: 400;">${sub.lastName}</span></h2>
-        <p>${sub.role || 'No Job Title'}</p>
-        <button class="tinder-download-btn" data-url="${sub.finalImageUrl}" data-name="${sub.firstName}_${sub.lastName}">
+        <h2>${sub.firstName} <span style="font-weight: 400;">${sub.lastName || ''}</span></h2>
+        ${sub.role ? `<p>${sub.role}</p>` : ''}
+        <button class="tinder-download-btn" data-url="${sub.finalImageUrl}" data-name="${sub.firstName}_${sub.lastName || 'Post'}">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Download Result
         </button>
@@ -686,6 +848,8 @@ function buildResultsCarousel() {
 
 function initTrueOverlaySlider(idx) {
   const container = document.getElementById(`bacontainer-${idx}`);
+  if (!container) return; // Skip if standalone post
+  
   const overlayImg = document.getElementById(`baoverlay-${idx}`);
   const handle = document.getElementById(`bahandle-${idx}`);
   let isDragging = false;

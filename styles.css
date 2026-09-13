@@ -206,9 +206,20 @@ mark { background: #fef08a; color: #0f172a; padding: 2px 6px; border-radius: 4px
 .secret-pad { height: 100px; cursor: default; }
 
 .step-item { opacity: 0; transform: translateY(20px); animation: fadeUp 0.6s ease forwards; }
-.delay-1 { animation-delay: 0.2s; }
-.delay-2 { animation-delay: 0.4s; }
-.delay-3 { animation-delay: 0.6s; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.3s; }
+.delay-3 { animation-delay: 0.8s; }
+.delay-4 { animation-delay: 1.2s; }
+.delay-5 { animation-delay: 1.6s; }
+.delay-6 { animation-delay: 2.0s; }
+.delay-7 { animation-delay: 2.4s; }
+.delay-8 { animation-delay: 2.6s; }
+
+.animated-btn {
+  opacity: 0; 
+  transform: translateY(20px);
+  animation: fadeUp 0.6s ease forwards var(--btn-delay), attentionShake 4s infinite calc(var(--btn-delay) + 2s);
+}
 
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 @keyframes constantShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }

@@ -66,6 +66,16 @@ const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
+// Auto-scroll to the "Already Uploaded" section when it appears on mobile
+setTimeout(() => {
+  if (entryGate && entryGate.style.display !== "none") {
+    const secondaryBox = document.querySelector(".gate-option-box.delay-8");
+    if (secondaryBox) {
+      secondaryBox.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }
+}, 2800); // 2.8 seconds aligns with the CSS animation stagger
+
 document.getElementById("enterSiteBtn").addEventListener("click", () => {
   const isReturningUser = localStorage.getItem("siteVisited") === "true";
   localStorage.setItem("siteVisited", "true");

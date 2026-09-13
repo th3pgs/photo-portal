@@ -738,6 +738,9 @@ function buildResultsCarousel() {
     slidesToBuild = [...finalizedSubmissions];
   }
 
+  // Load liked posts from memory for the UI initialization
+  const likedPosts = JSON.parse(localStorage.getItem("site_liked_posts") || "[]");
+
   slidesToBuild.forEach((sub, idx) => {
     const slide = document.createElement("div");
     let classNames = "result-slide-wrapper";
@@ -774,14 +777,18 @@ function buildResultsCarousel() {
       `;
     }
 
+    const isLiked = likedPosts.includes(sub.id);
+    const fillAttr = isLiked ? "#ff003c" : "none";
+    const strokeAttr = isLiked ? "none" : "white";
+
     slide.innerHTML = `
       <div class="ba-container">
         ${imageContentHtml}
       </div>
       
       <div class="shorts-action-bar">
-        <button class="action-btn like-btn" data-id="${sub.id}" data-idx="${idx}">
-          <svg viewBox="0 0 24 24" width="32" height="32" stroke="white" stroke-width="2" fill="none" class="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        <button class="action-btn like-btn" data-id="${sub.id}" data-idx="${idx}" data-liked="${isLiked}">
+          <svg viewBox="0 0 24 24" width="32" height="32" stroke="${strokeAttr}" stroke-width="2" fill="${fillAttr}" class="heart-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
           <span class="action-counter" id="like-count-${idx}">${sub.likes || 0}</span>
         </button>
         <button class="action-btn comment-trigger-btn" data-id="${sub.id}">
@@ -830,17 +837,26 @@ function buildResultsCarousel() {
     });
   });
 
+  // Re-engineered Like Logic with LocalStorage Caching
   document.querySelectorAll('.like-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
+      // Prevent clicking if they've already liked it
+      if(e.currentTarget.dataset.liked === "true") return; 
+      
+      e.currentTarget.dataset.liked = "true";
       const subId = e.currentTarget.dataset.id;
       const svg = e.currentTarget.querySelector('.heart-icon');
       
       svg.style.fill = "#ff003c"; svg.style.stroke = "none";
       svg.style.animation = "attentionShake 0.4s ease";
       setTimeout(() => svg.style.animation = "", 400);
-      
-      if(e.currentTarget.dataset.liked === "true") return; 
-      e.currentTarget.dataset.liked = "true";
+
+      // Save memory of the like to LocalStorage so it persists on reload
+      let localLikes = JSON.parse(localStorage.getItem("site_liked_posts") || "[]");
+      if (!localLikes.includes(subId)) {
+          localLikes.push(subId);
+          localStorage.setItem("site_liked_posts", JSON.stringify(localLikes));
+      }
 
       try {
         const ref = doc(db, "submissions", subId);

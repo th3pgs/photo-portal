@@ -402,7 +402,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
       }
 
       return `
-        <div class="chess-row lb-row-item" style="padding: 12px 15px; gap: 10px;">
+        <div class="chess-row ${isInitialLoad ? 'lb-row-hidden' : 'lb-row-visible'}" style="padding: 12px 15px; gap: 10px;">
           <div class="chess-rank" style="font-size: 0.95rem;">${lbRank}</div>
           <div class="chess-details">
             <span class="chess-name" style="font-size: 0.95rem;">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
@@ -413,40 +413,45 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         </div>`;
     });
 
+    landingLb.innerHTML = rowElements.join("");
+
     if (isInitialLoad && lbSubs.length > 0) {
-      landingLb.innerHTML = "";
       if(lbWrapper) lbWrapper.classList.add("lb-wrapper-show");
       if(lbTitle) lbTitle.classList.add("cinematic-title-show");
 
       setTimeout(() => {
-        let currentIndex = 0;
-        const totalItems = rowElements.length;
-        const intervalTime = Math.max(50, Math.floor(1300 / totalItems));
+        landingLb.scrollTop = landingLb.scrollHeight; // Force scrollbar to bottom instantly
 
-        const insertInterval = setInterval(() => {
-          if (currentIndex < totalItems) {
-            landingLb.insertAdjacentHTML('beforeend', rowElements[currentIndex]);
-            landingLb.scrollTop = landingLb.scrollHeight;
-            currentIndex++;
-          } else {
-            clearInterval(insertInterval);
+        const rows = landingLb.querySelectorAll('.chess-row');
+        const totalItems = rows.length;
+        const scrollDuration = 1600; // 1.6 seconds pan upwards
+        const intervalTime = scrollDuration / totalItems; // Stagger matches scroll speed perfectly
 
-            // Upward scroll
-            linearScrollToTop(landingLb, 1400).then(() => {
-              const welcome = document.getElementById("welcomeBox");
-              if (welcome) {
-                welcome.classList.add("wb-show");
-                // Accelerate scroll down to lock in center
-                const targetY = welcome.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (welcome.offsetHeight / 2);
-                smoothScrollToY(targetY, 600);
+        // Linear scroll back to top
+        linearScrollToTop(landingLb, scrollDuration).then(() => {
+          const welcome = document.getElementById("welcomeBox");
+          if (welcome) {
+            welcome.classList.add("wb-show");
+            setTimeout(() => {
+              const btn = document.getElementById("seeResultsBtn");
+              if (btn) {
+                const targetY = btn.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (btn.offsetHeight / 2);
+                smoothScrollToY(targetY, 600); // Auto-center the green button perfectly
               }
-            });
+            }, 150);
           }
-        }, intervalTime);
+        });
 
-      }, 350);
-    } else {
-      landingLb.innerHTML = rowElements.join("");
+        // Sequence row appearances starting from bottom index (e.g. 13 down to 1)
+        let delay = 0;
+        for (let i = totalItems - 1; i >= 0; i--) {
+          setTimeout(() => {
+            rows[i].classList.remove('lb-row-hidden');
+            rows[i].classList.add('lb-row-visible');
+          }, delay);
+          delay += intervalTime;
+        }
+      }, 400); // Give title time to fade in first
     }
   }
 });
@@ -634,21 +639,21 @@ document.getElementById("addStandaloneBtn").addEventListener("click", async () =
   if (!file) { showToast("Please select an image for the standalone post."); return; }
   
   try {
-    const url = await adminCloudUploadWithProgress(file, "Uploading Standalone...");
-    await addDoc(collection(db, "submissions"), {
-      isStandalone: true,
-      finalImageUrl: url,
-      firstName: title,
-      lastName: "",
-      role: "",
-      order: finalizedSubmissions.length, 
-      time: serverTimestamp()
-    });
-    document.getElementById("standaloneFile").value = "";
-    document.getElementById("standaloneTitle").value = "";
-    showToast("Standalone Post Added!");
+     const url = await adminCloudUploadWithProgress(file, "Uploading Standalone...");
+     await addDoc(collection(db, "submissions"), {
+        isStandalone: true,
+        finalImageUrl: url,
+        firstName: title,
+        lastName: "",
+        role: "",
+        order: finalizedSubmissions.length, 
+        time: serverTimestamp()
+     });
+     document.getElementById("standaloneFile").value = "";
+     document.getElementById("standaloneTitle").value = "";
+     showToast("Standalone Post Added!");
   } catch (e) {
-    showToast("Failed to upload standalone post.");
+     showToast("Failed to upload standalone post.");
   }
 });
 
@@ -658,45 +663,45 @@ function renderDraggableList() {
   listEl.innerHTML = "";
   
   finalizedSubmissions.forEach((sub, index) => {
-    const item = document.createElement("div");
-    item.className = "drag-item";
-    item.draggable = true;
-    item.dataset.id = sub.id;
-    item.innerHTML = `
-      <div class="drag-handle">☰</div>
-      <img src="${sub.finalImageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin: 0 15px;">
-      <div style="flex:1;">
-        <strong>${sub.firstName} ${sub.lastName || ''}</strong>
-        ${sub.isStandalone ? '<span class="standalone-badge">Standalone</span>' : ''}
-      </div>
-      <button class="btn-admin-danger btn-remove-standalone" style="padding: 5px 10px; font-size: 0.8rem;" data-id="${sub.id}" ${!sub.isStandalone ? 'style="display:none;"' : ''}>Delete</button>
-    `;
+     const item = document.createElement("div");
+     item.className = "drag-item";
+     item.draggable = true;
+     item.dataset.id = sub.id;
+     item.innerHTML = `
+        <div class="drag-handle">☰</div>
+        <img src="${sub.finalImageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin: 0 15px;">
+        <div style="flex:1;">
+          <strong>${sub.firstName} ${sub.lastName || ''}</strong>
+          ${sub.isStandalone ? '<span class="standalone-badge">Standalone</span>' : ''}
+        </div>
+        <button class="btn-admin-danger btn-remove-standalone" style="padding: 5px 10px; font-size: 0.8rem;" data-id="${sub.id}" ${!sub.isStandalone ? 'style="display:none;"' : ''}>Delete</button>
+     `;
 
-    item.addEventListener("dragstart", () => { isDraggingItem = true; item.classList.add("dragging"); });
-    item.addEventListener("dragend", () => { isDraggingItem = false; item.classList.remove("dragging"); });
-    listEl.appendChild(item);
+     item.addEventListener("dragstart", () => { isDraggingItem = true; item.classList.add("dragging"); });
+     item.addEventListener("dragend", () => { isDraggingItem = false; item.classList.remove("dragging"); });
+     listEl.appendChild(item);
   });
   setupDragEvents(listEl);
 }
 
 function setupDragEvents(listEl) {
   listEl.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(listEl, e.clientY);
-    const dragging = document.querySelector(".dragging");
-    if (!dragging) return;
-    if (afterElement == null) { listEl.appendChild(dragging); } 
-    else { listEl.insertBefore(dragging, afterElement); }
+     e.preventDefault();
+     const afterElement = getDragAfterElement(listEl, e.clientY);
+     const dragging = document.querySelector(".dragging");
+     if (!dragging) return;
+     if (afterElement == null) { listEl.appendChild(dragging); } 
+     else { listEl.insertBefore(dragging, afterElement); }
   });
 }
 
 function getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.drag-item:not(.dragging)')];
   return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
-    else { return closest; }
+     const box = child.getBoundingClientRect();
+     const offset = y - box.top - box.height / 2;
+     if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+     else { return closest; }
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
@@ -706,21 +711,21 @@ document.getElementById("saveOrderBtn").addEventListener("click", async () => {
   showToast("Saving custom order...");
   let promises = [];
   items.forEach((item, newIndex) => {
-    const id = item.dataset.id;
-    promises.push(updateDoc(doc(db, "submissions", id), { order: newIndex }));
+     const id = item.dataset.id;
+     promises.push(updateDoc(doc(db, "submissions", id), { order: newIndex }));
   });
   try {
-    await Promise.all(promises);
-    showToast("Order saved successfully!");
+     await Promise.all(promises);
+     showToast("Order saved successfully!");
   } catch(e) { showToast("Failed to save order."); }
 });
 
 document.addEventListener("click", async (e) => {
   if (e.target.classList.contains("btn-remove-standalone")) {
-    if (confirm("Delete this standalone post permanently?")) {
-      await deleteDoc(doc(db, "submissions", e.target.dataset.id));
-      showToast("Standalone post deleted.");
-    }
+     if (confirm("Delete this standalone post permanently?")) {
+        await deleteDoc(doc(db, "submissions", e.target.dataset.id));
+        showToast("Standalone post deleted.");
+     }
   }
 });
 
@@ -766,7 +771,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   });
 
   if (document.getElementById("viewOrder") && !document.getElementById("viewOrder").classList.contains("hidden")) {
-    renderDraggableList();
+     renderDraggableList();
   }
 });
 
@@ -977,8 +982,8 @@ function buildResultsCarousel() {
 
       let localLikes = JSON.parse(localStorage.getItem("site_liked_posts") || "[]");
       if (!localLikes.includes(subId)) {
-        localLikes.push(subId);
-        localStorage.setItem("site_liked_posts", JSON.stringify(localLikes));
+          localLikes.push(subId);
+          localStorage.setItem("site_liked_posts", JSON.stringify(localLikes));
       }
 
       try {

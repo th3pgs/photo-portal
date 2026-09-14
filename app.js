@@ -373,16 +373,13 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
           } else {
               let tsMillis = d.time ? d.time.toMillis() : Date.now();
               let diff = tsMillis - t0;
-              if (diff <= 60000) { 
-                  timeText = "At launch";
+              let mins = Math.max(0, Math.floor(diff / 60000));
+              let hrs = Math.floor(mins / 60);
+              
+              if (hrs > 0) {
+                  timeText = `In ${hrs} hr${hrs > 1 ? 's' : ''}`;
               } else {
-                  let mins = Math.floor(diff / 60000);
-                  let hrs = Math.floor(mins / 60);
-                  if (hrs > 0) {
-                      timeText = `In ${hrs} hr${hrs > 1 ? 's' : ''}`;
-                  } else {
-                      timeText = `In ${mins} min${mins > 1 ? 's' : ''}`;
-                  }
+                  timeText = `In ${mins} min${mins !== 1 ? 's' : ''}`;
               }
           }
 
@@ -399,7 +396,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
           landingLb.innerHTML += row;
       });
 
-      // Initial Scroll Animation Trigger (Leaderboard scrolls up, then whole page scrolls down)
+      // Initial Scroll Animation Trigger (Leaderboard scrolls up, then whole page sequences smoothly)
       if (!hasAnimatedLeaderboard && sortedSubs.length > 0) {
           hasAnimatedLeaderboard = true;
           setTimeout(() => {
@@ -408,9 +405,14 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
                   landingLb.scrollTo({ top: 0, behavior: 'smooth' }); 
                   setTimeout(() => {
                       const welcome = document.getElementById("welcomeBox");
-                      if (welcome) welcome.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 1500); 
-              }, 600); 
+                      if (welcome) {
+                          welcome.classList.add("wb-show");
+                          setTimeout(() => {
+                              welcome.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                          }, 100);
+                      }
+                  }, 1200); 
+              }, 400); 
           }, 300); 
       }
   }
@@ -807,7 +809,7 @@ resultsViewport.addEventListener("scroll", () => {
 
 document.getElementById("closeResultsBtn").addEventListener("click", () => {
   resultsModal.classList.add("hidden");
-  document.getElementById("entryGate").style.display = "block"; // Changed to block for new layout
+  document.getElementById("entryGate").style.display = "block"; 
   clearTimeout(onboardingTimer);
   if (activeUnsubComments) activeUnsubComments();
   if (activeLikesUnsub) activeLikesUnsub();

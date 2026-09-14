@@ -28,12 +28,10 @@
       <!-- Fastest Upload Leaderboard -->
       <div id="lbWrapper" class="landing-leaderboard-wrapper lb-wrapper-hidden">
         <h3 id="lbTitle" class="cinematic-title" style="margin-bottom: 15px; color: #1e293b; text-align: center; font-size: 1.15rem; font-weight: 800;">Fastest Uploaded Leaderboard</h3>
-        <div id="landingLeaderboard" class="landing-lb-scroll">
-            <!-- Animated JS Injections Here -->
-        </div>
+        <div id="landingLeaderboard" class="landing-lb-scroll"></div>
       </div>
       
-      <!-- Welcome Action Box (Hidden Until JS Sequence Finishes) -->
+      <!-- Welcome Action Box (Sequenced in after scroll) -->
       <div id="welcomeBox" class="entry-modal glass-card wb-hidden" style="margin-bottom: 20px;">
         <h2 class="wb-title" style="margin-bottom: 0.5rem; font-size: 1.6rem;"><b>Designs are finally ready.</b></h2>
         <p class="wb-desc" style="color: #475569; margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6;">
@@ -50,7 +48,7 @@
 
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- LEGACY MAIN APP STRUCTURE (HIDDEN INLINE TO PROTECT NORMAL USERS) -->
+  <!-- LEGACY MAIN APP STRUCTURE (PRESERVED BUT HIDDEN INLINE) -->
   <main class="main-wrapper" id="mainApp">
     
     <header class="hero-timer" id="heroTimer" style="display:none;">
@@ -230,9 +228,7 @@
         <span id="resultsPagination">1 / 1</span>
       </div>
 
-      <div class="results-carousel-viewport" id="resultsViewport">
-        <!-- Slides mapped dynamically -->
-      </div>
+      <div class="results-carousel-viewport" id="resultsViewport"></div>
       
       <!-- TIKTOK STYLE BOTTOM SHEET (COMMENTS) -->
       <div id="bottomSheetOverlay" class="bottom-sheet-overlay hidden"></div>
@@ -243,11 +239,8 @@
           <button id="closeSheetBtn" class="sheet-close">&times;</button>
         </div>
         
-        <div id="sheetCommentsList" class="sheet-comments-list">
-          <!-- Comments JS Injected Here -->
-        </div>
+        <div id="sheetCommentsList" class="sheet-comments-list"></div>
         
-        <!-- Native HTML Form guarantees mobile keyboard send button works -->
         <form id="sheetCommentForm" class="sheet-input-area">
           <div class="input-row" style="margin-bottom: 8px;">
             <input type="text" id="sheetCommentName" placeholder="Your real name" class="sheet-input short" required autocomplete="off">
@@ -443,9 +436,7 @@
             <h4>Current Viewing Order</h4>
             <button id="saveOrderBtn" class="btn-admin-action" style="background: #2563eb; color: white;">Save New Order</button>
           </div>
-          <div id="draggableOrderList" class="drag-list">
-            <!-- Items Injected by JS -->
-          </div>
+          <div id="draggableOrderList" class="drag-list"></div>
         </div>
       </div>
 

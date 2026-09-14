@@ -44,23 +44,19 @@ function smoothScrollToY(endY, duration) {
   });
 }
 
-function slowScrollToTop(element, duration) {
+function linearScrollToTop(element, duration) {
   const start = element.scrollTop;
   const startTime = performance.now();
   
   return new Promise(resolve => {
-      function step(time) {
-          let progress = (time - startTime) / duration;
-          if (progress > 1) progress = 1;
-          
-          const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-          
-          element.scrollTop = start * (1 - ease);
-          
-          if (progress < 1) requestAnimationFrame(step);
-          else resolve();
-      }
-      requestAnimationFrame(step);
+    function step(time) {
+      let progress = (time - startTime) / duration;
+      if (progress > 1) progress = 1;
+      element.scrollTop = start * (1 - progress);
+      if (progress < 1) requestAnimationFrame(step);
+      else resolve();
+    }
+    requestAnimationFrame(step);
   });
 }
 
@@ -221,31 +217,31 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
     
     const pSec = document.getElementById("previewSection");
     if (pSec) {
-        if (d.preview1 || d.preview2) {
-          pSec.style.display = "block";
-          const w1 = document.getElementById("ref1Wrap"); const w2 = document.getElementById("ref2Wrap");
-          if (d.preview1) { document.getElementById("ref1").src = d.preview1; w1.classList.remove("hidden-slide"); } else { w1.classList.add("hidden-slide"); }
-          if (d.preview2) { document.getElementById("ref2").src = d.preview2; w2.classList.remove("hidden-slide"); } else { w2.classList.add("hidden-slide"); }
-          initCarousel();
-        } else { pSec.style.display = "none"; }
+      if (d.preview1 || d.preview2) {
+        pSec.style.display = "block";
+        const w1 = document.getElementById("ref1Wrap"); const w2 = document.getElementById("ref2Wrap");
+        if (d.preview1) { document.getElementById("ref1").src = d.preview1; w1.classList.remove("hidden-slide"); } else { w1.classList.add("hidden-slide"); }
+        if (d.preview2) { document.getElementById("ref2").src = d.preview2; w2.classList.remove("hidden-slide"); } else { w2.classList.add("hidden-slide"); }
+        initCarousel();
+      } else { pSec.style.display = "none"; }
     }
     
     const vSec = document.getElementById("videoSection");
     if (vSec && video) {
-        if (d.videoUrl) { vSec.style.display = "block"; video.src = d.videoUrl; } else { vSec.style.display = "none"; }
+      if (d.videoUrl) { vSec.style.display = "block"; video.src = d.videoUrl; } else { vSec.style.display = "none"; }
     }
 
     const tSec = document.getElementById("toolsSection");
     if (tSec) {
-        if (d.tool1Title || d.tool2Title || d.tool3Title) {
-          tSec.style.display = "block";
-          for (let i = 1; i <= 3; i++) {
-            const title = d[`tool${i}Title`]; const url = d[`tool${i}Url`]; const img = d[`tool${i}Img`];
-            if (title) { document.getElementById(`toolTitle${i}`).innerText = title; document.getElementById(`adminTool${i}Title`).value = title; }
-            if (url) { document.getElementById(`toolLink${i}`).href = url; document.getElementById(`adminTool${i}Url`).value = url; }
-            if (img) { document.getElementById(`toolImg${i}`).src = img; }
-          }
-        } else { tSec.style.display = "none"; }
+      if (d.tool1Title || d.tool2Title || d.tool3Title) {
+        tSec.style.display = "block";
+        for (let i = 1; i <= 3; i++) {
+          const title = d[`tool${i}Title`]; const url = d[`tool${i}Url`]; const img = d[`tool${i}Img`];
+          if (title) { document.getElementById(`toolTitle${i}`).innerText = title; document.getElementById(`adminTool${i}Title`).value = title; }
+          if (url) { document.getElementById(`toolLink${i}`).href = url; document.getElementById(`adminTool${i}Url`).value = url; }
+          if (img) { document.getElementById(`toolImg${i}`).src = img; }
+        }
+      } else { tSec.style.display = "none"; }
     }
   }
 });
@@ -264,8 +260,8 @@ function startDigitalCountdown() {
 
     const cd = document.getElementById("countdown");
     if (cd) {
-        cd.innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
-        document.getElementById("timerStatusText").innerText = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
+      cd.innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
+      document.getElementById("timerStatusText").innerText = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
     }
 
     document.querySelectorAll('.time-updater').forEach(el => { if(el.dataset.time) el.innerText = timeAgo(new Date(parseInt(el.dataset.time))); });
@@ -290,7 +286,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   const lbWrapper = document.getElementById("lbWrapper");
   const lbTitle = document.getElementById("lbTitle");
   
-  if(landingLb) landingLb.innerHTML = "";
   let t0 = 0;
   let sortedSubs = [];
 
@@ -303,75 +298,75 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     if (isTimeout && id === myId && d.isEditing) { setDoc(doc(db, "submissions", myId), { isEditing: false }, { merge: true }); localStorage.removeItem("isEditingLocal"); d.isEditing = false; }
     
     if(!d.isStandalone && orgList && regList) {
-        counter++;
-        const canEdit = (id === myId && (now - uploadTime) < 300000); 
-        const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
-        
-        let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : now) : now;
-        const timeText = timeAgo(new Date(tsMillis));
-        
-        let statusHtml = "";
-        if (d.isEditing && !isTimeout) { statusHtml = `<span class="editing-text">Editing...</span>`; } 
-        else { statusHtml = `${editBtn}<span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>${tickIcon}`; }
+      counter++;
+      const canEdit = (id === myId && (now - uploadTime) < 300000); 
+      const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
+      
+      let tsMillis = d.time ? (d.time.toMillis ? d.time.toMillis() : now) : now;
+      const timeText = timeAgo(new Date(tsMillis));
+      
+      let statusHtml = "";
+      if (d.isEditing && !isTimeout) { statusHtml = `<span class="editing-text">Editing...</span>`; } 
+      else { statusHtml = `${editBtn}<span class="chess-time time-updater" data-time="${tsMillis}">${timeText}</span>${tickIcon}`; }
 
-        const cardHtml = `
-          <div class="chess-row">
-            ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
-            <div class="chess-details">
-              <span class="chess-name">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
-              <span class="chess-role">${d.role || ''}</span>
-            </div>
-            <div class="chess-status">${statusHtml}</div>
-          </div>`;
-        
-        d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
+      const cardHtml = `
+        <div class="chess-row">
+          ${!d.isOrganizer ? `<div class="chess-rank">${rank++}</div>` : ''}
+          <div class="chess-details">
+            <span class="chess-name">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
+            <span class="chess-role">${d.role || ''}</span>
+          </div>
+          <div class="chess-status">${statusHtml}</div>
+        </div>`;
+      
+      d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
     }
 
     if (gallery) {
-        let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`; let dlBtn = ''; let beforeUploadBtn = '';
-        
-        if (d.imageUrl) {
-          if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov") || d.imageUrl.includes("/video/")) {
-            imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
-          } else { imgHtml = `<img src="${d.imageUrl}">`; }
-          dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
-        } else if (d.isStandalone && d.finalImageUrl) {
-          imgHtml = `<img src="${d.finalImageUrl}">`;
-          dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.finalImageUrl}', '_blank')">Download Final</button>`;
-        } else {
-          beforeUploadBtn = `<button class="btn-admin-action" style="flex:1; background:#3b82f6; color:white; border:none;" onclick="triggerBeforeUpload('${id}')">Upload Before</button>`;
-        }
-        
-        const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
-        const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
+      let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`; let dlBtn = ''; let beforeUploadBtn = '';
+      
+      if (d.imageUrl) {
+        if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov") || d.imageUrl.includes("/video/")) {
+          imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
+        } else { imgHtml = `<img src="${d.imageUrl}">`; }
+        dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
+      } else if (d.isStandalone && d.finalImageUrl) {
+        imgHtml = `<img src="${d.finalImageUrl}">`;
+        dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.finalImageUrl}', '_blank')">Download Final</button>`;
+      } else {
+        beforeUploadBtn = `<button class="btn-admin-action" style="flex:1; background:#3b82f6; color:white; border:none;" onclick="triggerBeforeUpload('${id}')">Upload Before</button>`;
+      }
+      
+      const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
+      const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
 
-        let finalUploadBtn = "";
-        if (d.isStandalone) {
-          finalUploadBtn = `<span class="editing-text" style="color: #2563eb; width: 100%; text-align: center; margin-bottom: 5px;">Standalone Post</span>`;
-        } else {
-          finalUploadBtn = !d.finalImageUrl 
-            ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
-            : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
-               <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
-        }
+      let finalUploadBtn = "";
+      if (d.isStandalone) {
+        finalUploadBtn = `<span class="editing-text" style="color: #2563eb; width: 100%; text-align: center; margin-bottom: 5px;">Standalone Post</span>`;
+      } else {
+        finalUploadBtn = !d.finalImageUrl 
+          ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
+          : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
+             <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
+      }
 
-        gallery.innerHTML += `
-          <div class="gallery-card ${editingClass}" id="gal-${id}">
-            ${editingBadge} ${imgHtml}
-            <div class="gallery-info">
-              <h4>${d.firstName} ${d.lastName || ''}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role || 'No Role'}</p>
-              <div style="display:flex; gap:8px; margin-bottom: 10px;">
-                <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName || ''} - ${d.role || ''}'); showToast('Copied!')">Copy Info</button>
-                ${dlBtn} ${beforeUploadBtn}
-              </div>
-              <div style="display:flex; gap:8px; margin-bottom: 10px;">${finalUploadBtn}</div>
-              <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
-              <div class="del-req-box hidden" id="delbox-${id}">
-                <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
-                <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
-              </div>
+      gallery.innerHTML += `
+        <div class="gallery-card ${editingClass}" id="gal-${id}">
+          ${editingBadge} ${imgHtml}
+          <div class="gallery-info">
+            <h4>${d.firstName} ${d.lastName || ''}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role || 'No Role'}</p>
+            <div style="display:flex; gap:8px; margin-bottom: 10px;">
+              <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName || ''} - ${d.role || ''}'); showToast('Copied!')">Copy Info</button>
+              ${dlBtn} ${beforeUploadBtn}
             </div>
-          </div>`;
+            <div style="display:flex; gap:8px; margin-bottom: 10px;">${finalUploadBtn}</div>
+            <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
+            <div class="del-req-box hidden" id="delbox-${id}">
+              <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
+              <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
+            </div>
+          </div>
+        </div>`;
     }
   });
 
@@ -379,91 +374,80 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   if (rc) rc.textContent = `${counter} Uploads`;
 
   if(landingLb) {
-      const lbSubs = sortedSubs.filter(d => !d.isStandalone).slice(0, 13);
-      
-      const nonOrg = lbSubs.filter(s => !s.isOrganizer && s.time);
-      if (nonOrg.length > 0) t0 = nonOrg[0].time.toMillis();
+    const lbSubs = sortedSubs.filter(d => !d.isStandalone).slice(0, 13);
+    const nonOrg = lbSubs.filter(s => !s.isOrganizer && s.time);
+    if (nonOrg.length > 0) t0 = nonOrg[0].time.toMillis();
 
-      const isInitialLoad = !hasAnimatedLeaderboard;
-      hasAnimatedLeaderboard = true;
+    const isInitialLoad = !hasAnimatedLeaderboard;
+    hasAnimatedLeaderboard = true;
 
-      let lbRank = 1;
-      let htmlBuffer = "";
-
-      lbSubs.forEach((d) => {
-          let timeText = "";
-          if (lbRank === 3) {
-              timeText = "In 43 mins";
-          } else if (d.isOrganizer) {
-              timeText = "Before deadline";
-          } else {
-              let tsMillis = d.time ? d.time.toMillis() : Date.now();
-              let diff = tsMillis - t0;
-              let mins = Math.max(0, Math.floor(diff / 60000));
-              let hrs = Math.floor(mins / 60);
-              
-              if (hrs > 0) {
-                  timeText = `In ${hrs} hr${hrs > 1 ? 's' : ''}`;
-              } else {
-                  timeText = `In ${mins} min${mins !== 1 ? 's' : ''}`;
-              }
-          }
-
-          const visibilityClass = isInitialLoad ? "lb-row-hidden" : "lb-row-visible";
-
-          htmlBuffer += `
-            <div class="chess-row ${visibilityClass}" style="padding: 12px 15px; gap: 10px;">
-              <div class="chess-rank" style="font-size: 0.95rem;">${lbRank}</div>
-              <div class="chess-details">
-                <span class="chess-name" style="font-size: 0.95rem;">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
-              </div>
-              <div class="chess-status">
-                <span class="chess-time" style="font-size: 0.8rem; font-weight: bold; color: var(--accent-blue);">${timeText}</span>
-              </div>
-            </div>`;
-          lbRank++;
-      });
-
-      landingLb.innerHTML = htmlBuffer;
-
-      // Sequential Reveal Apple-Style
-      if (isInitialLoad && lbSubs.length > 0) {
-          if(lbWrapper) lbWrapper.classList.add("lb-wrapper-show");
-          if(lbTitle) lbTitle.classList.add("cinematic-title-show");
-
-          setTimeout(() => {
-              landingLb.scrollTop = landingLb.scrollHeight; 
-
-              const rows = landingLb.querySelectorAll('.chess-row');
-              let delay = 0;
-              
-              // Fade in from bottom to top
-              for (let i = rows.length - 1; i >= 0; i--) {
-                  setTimeout(() => {
-                      rows[i].classList.remove('lb-row-hidden');
-                      rows[i].classList.add('lb-row-visible');
-                  }, delay);
-                  delay += 120; 
-              }
-
-              // Majestic Slow Scroll Up
-              setTimeout(() => {
-                  slowScrollToTop(landingLb, 2800).then(() => {
-                      // Trigger Welcome Box Reveal & Center Screen
-                      setTimeout(() => {
-                          const welcome = document.getElementById("welcomeBox");
-                          if (welcome) {
-                              welcome.classList.add("wb-show");
-                              setTimeout(() => {
-                                  welcome.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              }, 300);
-                          }
-                      }, 200);
-                  });
-              }, delay + 400); 
-
-          }, 800); // Give title time to blur in
+    const rowElements = lbSubs.map((d, index) => {
+      const lbRank = index + 1;
+      let timeText = "";
+      if (lbRank === 3) {
+        timeText = "In 43 mins";
+      } else if (d.isOrganizer) {
+        timeText = "Before deadline";
+      } else {
+        let tsMillis = d.time ? d.time.toMillis() : Date.now();
+        let diff = tsMillis - t0;
+        let mins = Math.max(0, Math.floor(diff / 60000));
+        let hrs = Math.floor(mins / 60);
+        
+        if (hrs > 0) {
+          timeText = `In ${hrs} hr${hrs > 1 ? 's' : ''}`;
+        } else {
+          timeText = `In ${mins} min${mins !== 1 ? 's' : ''}`;
+        }
       }
+
+      return `
+        <div class="chess-row lb-row-item" style="padding: 12px 15px; gap: 10px;">
+          <div class="chess-rank" style="font-size: 0.95rem;">${lbRank}</div>
+          <div class="chess-details">
+            <span class="chess-name" style="font-size: 0.95rem;">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
+          </div>
+          <div class="chess-status">
+            <span class="chess-time" style="font-size: 0.8rem; font-weight: bold; color: var(--accent-blue);">${timeText}</span>
+          </div>
+        </div>`;
+    });
+
+    if (isInitialLoad && lbSubs.length > 0) {
+      landingLb.innerHTML = "";
+      if(lbWrapper) lbWrapper.classList.add("lb-wrapper-show");
+      if(lbTitle) lbTitle.classList.add("cinematic-title-show");
+
+      setTimeout(() => {
+        let currentIndex = 0;
+        const totalItems = rowElements.length;
+        const intervalTime = Math.max(50, Math.floor(1300 / totalItems));
+
+        const insertInterval = setInterval(() => {
+          if (currentIndex < totalItems) {
+            landingLb.insertAdjacentHTML('beforeend', rowElements[currentIndex]);
+            landingLb.scrollTop = landingLb.scrollHeight;
+            currentIndex++;
+          } else {
+            clearInterval(insertInterval);
+
+            // Upward scroll
+            linearScrollToTop(landingLb, 1400).then(() => {
+              const welcome = document.getElementById("welcomeBox");
+              if (welcome) {
+                welcome.classList.add("wb-show");
+                // Accelerate scroll down to lock in center
+                const targetY = welcome.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (welcome.offsetHeight / 2);
+                smoothScrollToY(targetY, 600);
+              }
+            });
+          }
+        }, intervalTime);
+
+      }, 350);
+    } else {
+      landingLb.innerHTML = rowElements.join("");
+    }
   }
 });
 
@@ -650,21 +634,21 @@ document.getElementById("addStandaloneBtn").addEventListener("click", async () =
   if (!file) { showToast("Please select an image for the standalone post."); return; }
   
   try {
-     const url = await adminCloudUploadWithProgress(file, "Uploading Standalone...");
-     await addDoc(collection(db, "submissions"), {
-        isStandalone: true,
-        finalImageUrl: url,
-        firstName: title,
-        lastName: "",
-        role: "",
-        order: finalizedSubmissions.length, 
-        time: serverTimestamp()
-     });
-     document.getElementById("standaloneFile").value = "";
-     document.getElementById("standaloneTitle").value = "";
-     showToast("Standalone Post Added!");
+    const url = await adminCloudUploadWithProgress(file, "Uploading Standalone...");
+    await addDoc(collection(db, "submissions"), {
+      isStandalone: true,
+      finalImageUrl: url,
+      firstName: title,
+      lastName: "",
+      role: "",
+      order: finalizedSubmissions.length, 
+      time: serverTimestamp()
+    });
+    document.getElementById("standaloneFile").value = "";
+    document.getElementById("standaloneTitle").value = "";
+    showToast("Standalone Post Added!");
   } catch (e) {
-     showToast("Failed to upload standalone post.");
+    showToast("Failed to upload standalone post.");
   }
 });
 
@@ -674,45 +658,45 @@ function renderDraggableList() {
   listEl.innerHTML = "";
   
   finalizedSubmissions.forEach((sub, index) => {
-     const item = document.createElement("div");
-     item.className = "drag-item";
-     item.draggable = true;
-     item.dataset.id = sub.id;
-     item.innerHTML = `
-        <div class="drag-handle">☰</div>
-        <img src="${sub.finalImageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin: 0 15px;">
-        <div style="flex:1;">
-          <strong>${sub.firstName} ${sub.lastName || ''}</strong>
-          ${sub.isStandalone ? '<span class="standalone-badge">Standalone</span>' : ''}
-        </div>
-        <button class="btn-admin-danger btn-remove-standalone" style="padding: 5px 10px; font-size: 0.8rem;" data-id="${sub.id}" ${!sub.isStandalone ? 'style="display:none;"' : ''}>Delete</button>
-     `;
+    const item = document.createElement("div");
+    item.className = "drag-item";
+    item.draggable = true;
+    item.dataset.id = sub.id;
+    item.innerHTML = `
+      <div class="drag-handle">☰</div>
+      <img src="${sub.finalImageUrl}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin: 0 15px;">
+      <div style="flex:1;">
+        <strong>${sub.firstName} ${sub.lastName || ''}</strong>
+        ${sub.isStandalone ? '<span class="standalone-badge">Standalone</span>' : ''}
+      </div>
+      <button class="btn-admin-danger btn-remove-standalone" style="padding: 5px 10px; font-size: 0.8rem;" data-id="${sub.id}" ${!sub.isStandalone ? 'style="display:none;"' : ''}>Delete</button>
+    `;
 
-     item.addEventListener("dragstart", () => { isDraggingItem = true; item.classList.add("dragging"); });
-     item.addEventListener("dragend", () => { isDraggingItem = false; item.classList.remove("dragging"); });
-     listEl.appendChild(item);
+    item.addEventListener("dragstart", () => { isDraggingItem = true; item.classList.add("dragging"); });
+    item.addEventListener("dragend", () => { isDraggingItem = false; item.classList.remove("dragging"); });
+    listEl.appendChild(item);
   });
   setupDragEvents(listEl);
 }
 
 function setupDragEvents(listEl) {
   listEl.addEventListener("dragover", (e) => {
-     e.preventDefault();
-     const afterElement = getDragAfterElement(listEl, e.clientY);
-     const dragging = document.querySelector(".dragging");
-     if (!dragging) return;
-     if (afterElement == null) { listEl.appendChild(dragging); } 
-     else { listEl.insertBefore(dragging, afterElement); }
+    e.preventDefault();
+    const afterElement = getDragAfterElement(listEl, e.clientY);
+    const dragging = document.querySelector(".dragging");
+    if (!dragging) return;
+    if (afterElement == null) { listEl.appendChild(dragging); } 
+    else { listEl.insertBefore(dragging, afterElement); }
   });
 }
 
 function getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.drag-item:not(.dragging)')];
   return draggableElements.reduce((closest, child) => {
-     const box = child.getBoundingClientRect();
-     const offset = y - box.top - box.height / 2;
-     if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
-     else { return closest; }
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+    else { return closest; }
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
@@ -722,21 +706,21 @@ document.getElementById("saveOrderBtn").addEventListener("click", async () => {
   showToast("Saving custom order...");
   let promises = [];
   items.forEach((item, newIndex) => {
-     const id = item.dataset.id;
-     promises.push(updateDoc(doc(db, "submissions", id), { order: newIndex }));
+    const id = item.dataset.id;
+    promises.push(updateDoc(doc(db, "submissions", id), { order: newIndex }));
   });
   try {
-     await Promise.all(promises);
-     showToast("Order saved successfully!");
+    await Promise.all(promises);
+    showToast("Order saved successfully!");
   } catch(e) { showToast("Failed to save order."); }
 });
 
 document.addEventListener("click", async (e) => {
   if (e.target.classList.contains("btn-remove-standalone")) {
-     if (confirm("Delete this standalone post permanently?")) {
-        await deleteDoc(doc(db, "submissions", e.target.dataset.id));
-        showToast("Standalone post deleted.");
-     }
+    if (confirm("Delete this standalone post permanently?")) {
+      await deleteDoc(doc(db, "submissions", e.target.dataset.id));
+      showToast("Standalone post deleted.");
+    }
   }
 });
 
@@ -782,7 +766,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   });
 
   if (document.getElementById("viewOrder") && !document.getElementById("viewOrder").classList.contains("hidden")) {
-     renderDraggableList();
+    renderDraggableList();
   }
 });
 
@@ -993,8 +977,8 @@ function buildResultsCarousel() {
 
       let localLikes = JSON.parse(localStorage.getItem("site_liked_posts") || "[]");
       if (!localLikes.includes(subId)) {
-          localLikes.push(subId);
-          localStorage.setItem("site_liked_posts", JSON.stringify(localLikes));
+        localLikes.push(subId);
+        localStorage.setItem("site_liked_posts", JSON.stringify(localLikes));
       }
 
       try {
@@ -1013,7 +997,7 @@ function buildResultsCarousel() {
 
 function initTrueOverlaySlider(idx) {
   const container = document.getElementById(`bacontainer-${idx}`);
-  if (!container) return; // Skip if standalone post
+  if (!container) return;
   
   const overlayImg = document.getElementById(`baoverlay-${idx}`);
   const handle = document.getElementById(`bahandle-${idx}`);

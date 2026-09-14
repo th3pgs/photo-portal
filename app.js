@@ -266,7 +266,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   
   let counter = 0; let rank = 1;
 
-  // New Landing Leaderboard Extraction
   const landingLb = document.getElementById("landingLeaderboard");
   if(landingLb) landingLb.innerHTML = "";
   let t0 = 0;
@@ -280,7 +279,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 
     if (isTimeout && id === myId && d.isEditing) { setDoc(doc(db, "submissions", myId), { isEditing: false }, { merge: true }); localStorage.removeItem("isEditingLocal"); d.isEditing = false; }
     
-    // Legacy Roster
     if(!d.isStandalone && orgList && regList) {
         counter++;
         const canEdit = (id === myId && (now - uploadTime) < 300000); 
@@ -306,7 +304,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         d.isOrganizer ? (orgList.innerHTML += cardHtml) : (regList.innerHTML += cardHtml);
     }
 
-    // Populate Admin Gallery (Includes Standalones)
     if (gallery) {
         let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`; let dlBtn = ''; let beforeUploadBtn = '';
         
@@ -358,17 +355,25 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   const rc = document.getElementById("rosterCounter");
   if (rc) rc.textContent = `${counter} Uploads`;
 
-  // Process & render the new Landing Leaderboard
   if(landingLb) {
-      const nonOrg = sortedSubs.filter(s => !s.isOrganizer && s.time);
+      // 1. Cap to top 13 entries
+      const lbSubs = sortedSubs.filter(d => !d.isStandalone).slice(0, 13);
+      
+      const nonOrg = lbSubs.filter(s => !s.isOrganizer && s.time);
       if (nonOrg.length > 0) t0 = nonOrg[0].time.toMillis();
 
+      const isInitialLoad = !hasAnimatedLeaderboard;
+      hasAnimatedLeaderboard = true;
+
       let lbRank = 1;
-      sortedSubs.forEach((d) => {
-          if (d.isStandalone) return; 
-          
+      let htmlBuffer = "";
+
+      lbSubs.forEach((d) => {
           let timeText = "";
-          if (d.isOrganizer) {
+          // Override Rank 3
+          if (lbRank === 3) {
+              timeText = "In 43 mins";
+          } else if (d.isOrganizer) {
               timeText = "Before deadline";
           } else {
               let tsMillis = d.time ? d.time.toMillis() : Date.now();
@@ -383,9 +388,11 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
               }
           }
 
-          const row = `
-            <div class="chess-row" style="padding: 12px 15px; gap: 10px;">
-              <div class="chess-rank" style="font-size: 0.95rem;">${lbRank++}</div>
+          const visibilityClass = isInitialLoad ? "lb-row-hidden" : "lb-row-visible";
+
+          htmlBuffer += `
+            <div class="chess-row ${visibilityClass}" style="padding: 12px 15px; gap: 10px;">
+              <div class="chess-rank" style="font-size: 0.95rem;">${lbRank}</div>
               <div class="chess-details">
                 <span class="chess-name" style="font-size: 0.95rem;">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
               </div>
@@ -393,27 +400,35 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
                 <span class="chess-time" style="font-size: 0.8rem; font-weight: bold; color: var(--accent-blue);">${timeText}</span>
               </div>
             </div>`;
-          landingLb.innerHTML += row;
+          lbRank++;
       });
 
-      // Initial Scroll Animation Trigger (Leaderboard scrolls up, then whole page sequences smoothly)
-      if (!hasAnimatedLeaderboard && sortedSubs.length > 0) {
-          hasAnimatedLeaderboard = true;
-          setTimeout(() => {
-              landingLb.scrollTop = landingLb.scrollHeight; 
+      landingLb.innerHTML = htmlBuffer;
+
+      // Sequential Reveal Apple-Style
+      if (isInitialLoad && lbSubs.length > 0) {
+          const rows = landingLb.querySelectorAll('.chess-row');
+          let delay = 0;
+          
+          // Loop bottom to top (13 to 1)
+          for (let i = rows.length - 1; i >= 0; i--) {
               setTimeout(() => {
-                  landingLb.scrollTo({ top: 0, behavior: 'smooth' }); 
+                  rows[i].classList.remove('lb-row-hidden');
+                  rows[i].classList.add('lb-row-visible');
+              }, delay);
+              delay += 100; 
+          }
+
+          // Trigger Welcome Box Reveal & Scroll Down
+          setTimeout(() => {
+              const welcome = document.getElementById("welcomeBox");
+              if (welcome) {
+                  welcome.classList.add("wb-show");
                   setTimeout(() => {
-                      const welcome = document.getElementById("welcomeBox");
-                      if (welcome) {
-                          welcome.classList.add("wb-show");
-                          setTimeout(() => {
-                              welcome.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                          }, 100);
-                      }
-                  }, 1200); 
-              }, 400); 
-          }, 300); 
+                      welcome.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                  }, 100);
+              }
+          }, delay + 400); 
       }
   }
 });
@@ -553,7 +568,6 @@ document.getElementById("secretTrigger").addEventListener("click", () => {
 });
 document.getElementById("closeAdminBtn").addEventListener("click", () => document.getElementById("adminPanel").classList.add("hidden"));
 
-// Admin Tab Switching
 function switchAdminTab(activeTabId, activeViewId) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.admin-view').forEach(v => v.classList.add('hidden'));
@@ -692,10 +706,8 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-
 // -------------------------------------------------------------
 // RESULTS LOGIC: TIKTOK STYLE, TRUE SCROLL, PER-POST UI 
-// DANMAKU MIDDLE-SCREEN LIVE STREAM & COUNTERS
 // -------------------------------------------------------------
 const resultsModal = document.getElementById("resultsModal");
 const seeResultsBtn = document.getElementById("seeResultsBtn");
@@ -709,19 +721,15 @@ let activeUnsubSheetComments = null;
 let activeLikesUnsub = null;
 let currentModalSubId = null;
 
-let activeCommentActionId = null;
-let activeCommentActionPin = null;
-
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   let tempSubs = [];
   snap.forEach(doc => {
     const data = doc.data();
-    if (data.finalImageUrl) { // Includes both standalones and final paired edits
+    if (data.finalImageUrl) { 
       tempSubs.push({ id: doc.id, ...data });
     }
   });
 
-  // Sort logically by custom order first, then fallback to time
   tempSubs.sort((a, b) => {
     let orderA = a.order !== undefined ? a.order : 9999;
     let orderB = b.order !== undefined ? b.order : 9999;
@@ -732,7 +740,13 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   });
 
   finalizedSubmissions = tempSubs;
-  resultsLoaded = true; // Mark as loaded safely
+  resultsLoaded = true;
+
+  // Background Image Caching
+  finalizedSubmissions.forEach(sub => {
+    if (sub.finalImageUrl) { const img = new Image(); img.src = sub.finalImageUrl; }
+    if (sub.imageUrl) { const img2 = new Image(); img2.src = sub.imageUrl; }
+  });
 
   if (document.getElementById("viewOrder") && !document.getElementById("viewOrder").classList.contains("hidden")) {
      renderDraggableList();
@@ -740,38 +754,30 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 });
 
 seeResultsBtn.addEventListener("click", () => {
-  // If not loaded, we still transition to the loader overlay seamlessly, instead of showing a toast
   document.getElementById("entryGate").style.display = "none";
   entryLoader.classList.remove("hidden");
   
-  // Continuously check until results are ready from Firebase
-  const checkAndLoad = setInterval(() => {
-    if (resultsLoaded) {
-      clearInterval(checkAndLoad);
-      
-      if (finalizedSubmissions.length === 0) {
-        entryLoader.classList.add("hidden");
-        document.getElementById("entryGate").style.display = "block"; 
-        showToast("No finalized results available yet.");
-        return;
-      }
-      
-      // We are good to go, transition into the carousel
-      setTimeout(() => {
-        entryLoader.classList.add("hidden");
-        resultsModal.classList.remove("hidden");
-        buildResultsCarousel();
-
-        if (!localStorage.getItem("shortsOnboardingV16")) {
-          onboardingTimer = setTimeout(() => {
-            if (!localStorage.getItem("shortsOnboardingV16")) {
-              document.getElementById("scrollOnboarding").classList.remove("hidden");
-            }
-          }, 2000);
-        }
-      }, 400); // Small UI buffer
+  // 5 SECOND CONTROLLED LOAD - Guaranteed Pre-Caching Time
+  setTimeout(() => {
+    if (!resultsLoaded || finalizedSubmissions.length === 0) {
+      entryLoader.classList.add("hidden");
+      document.getElementById("entryGate").style.display = "block"; 
+      showToast("No finalized results available yet. Please try again.");
+      return;
     }
-  }, 100); 
+    
+    entryLoader.classList.add("hidden");
+    resultsModal.classList.remove("hidden");
+    buildResultsCarousel();
+
+    if (!localStorage.getItem("shortsOnboardingV16")) {
+      onboardingTimer = setTimeout(() => {
+        if (!localStorage.getItem("shortsOnboardingV16")) {
+          document.getElementById("scrollOnboarding").classList.remove("hidden");
+        }
+      }, 2000);
+    }
+  }, 5000); 
 });
 
 let scrollDebounce;

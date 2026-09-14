@@ -21,40 +21,39 @@
     </div>
   </div>
 
-  <!-- ENTRY GATE (SPLIT PATH) -->
+  <!-- ENTRY GATE (NEW LINEAR LANDING PAGE) -->
   <div id="entryGate" class="entry-gate">
-    <div class="entry-modal glass-card">
-      <h2 class="step-item delay-1" style="margin-bottom: 1.2rem;">Welcome to the media platform</h2>
+    <div class="landing-content">
       
-      <div class="gate-option-box step-item delay-2">
-        <h4>Haven't uploaded yet?</h4>
-        <div class="steps-list" style="margin-top: 12px; margin-bottom: 18px;">
-          <p class="step-item delay-3"><b>1.</b> Pick a professional pose. If you don't have one, follow the video below to get a <mark>high-quality AI-edited professional image</mark>.</p>
-          <p class="step-item delay-4"><b>2.</b> Select the <mark>highest quality version</mark> of your image.</p>
-          <p class="step-item delay-5"><b>3.</b> Enter your <mark>correct information</mark> and hit upload.</p>
+      <!-- Fastest Upload Leaderboard -->
+      <div class="landing-leaderboard-wrapper step-item delay-1">
+        <h3 style="margin-bottom: 15px; color: #1e293b; text-align: center; font-size: 1.15rem; font-weight: 800;">Fastest Uploaded Leaderboard</h3>
+        <div id="landingLeaderboard" class="landing-lb-scroll">
+            <!-- Animated JS Injections Here -->
         </div>
-        <button id="enterSiteBtn" class="btn-yellow animated-btn" style="--btn-delay: 2.0s;">Go learn and upload</button>
       </div>
-
-      <div class="gate-divider step-item delay-7"><span>OR</span></div>
-
-      <div class="gate-option-box step-item delay-8">
-        <h4>Already uploaded?</h4>
-        <p style="font-size: 0.9rem; color: #475569; margin: 8px 0 18px; line-height: 1.5;">
-          See the newly released edits and check out your team's results. <br>
-          <i style="color: #64748b; margin-top: 5px; display: block;">* Note: Only fully processed and finalized edits will appear here. If you just uploaded, check back later!</i>
+      
+      <!-- Welcome Action Box -->
+      <div id="welcomeBox" class="entry-modal glass-card step-item delay-2" style="margin-bottom: 20px;">
+        <h2 style="margin-bottom: 0.5rem; font-size: 1.6rem;">Welcome!</h2>
+        <p style="color: #475569; margin-bottom: 20px; font-size: 0.95rem; line-height: 1.6;">
+          Your designs are final ready.<br>Tap below to see the before and after transformations, download your favorites, and share them with the world.
         </p>
-        <button id="seeResultsBtn" class="btn-green animated-btn" style="--btn-delay: 2.9s;">View Finalized Edits</button>
+        <button id="seeResultsBtn" class="btn-green animated-btn" style="--btn-delay: 1.5s;">View finalized posters</button>
       </div>
 
+      <!-- Secret Admin Trigger Pad -->
+      <div id="secretTrigger" class="secret-gap"></div>
+      
     </div>
   </div>
 
   <div id="toastContainer" class="toast-container"></div>
 
+  <!-- LEGACY MAIN APP STRUCTURE (HIDDEN INLINE TO PROTECT NORMAL USERS) -->
   <main class="main-wrapper" id="mainApp">
     
-    <header class="hero-timer" id="heroTimer">
+    <header class="hero-timer" id="heroTimer" style="display:none;">
       <div class="timer-black-box">
         <h3 class="timer-title flicker-text">UPLOAD BEFORE</h3>
         <div id="countdown" class="digital-money-clock">00:00:00</div>
@@ -139,7 +138,7 @@
     </section>
 
     <!-- UPLOAD FLOW -->
-    <section class="section-container">
+    <section class="section-container" style="display:none;">
       <div class="glass-card form-box relative-box" id="formCard">
         <div id="uploadOverlay" class="upload-overlay hidden">
           <div class="upload-status-box">
@@ -203,7 +202,8 @@
       </div>
     </section>
 
-    <section class="section-container">
+    <!-- Legacy Leaderboard -->
+    <section class="section-container" style="display:none;">
       <div class="section-heading flex-between">
         <div style="display: flex; align-items: center; gap: 10px;"><h3 style="margin: 0;">Upload Leaderboard</h3><div class="live-badge"><span class="live-dot"></span>LIVE</div></div>
         <span id="rosterCounter" class="counter-badge">0 Uploads</span>
@@ -215,8 +215,6 @@
       </div>
     </section>
     
-    <footer id="secretTrigger" class="secret-pad"></footer>
-
     <!-- YT SHORTS STYLE RESULTS WINDOW -->
     <div id="resultsModal" class="results-fullscreen hidden">
       
@@ -424,7 +422,7 @@
         <div class="gallery-grid" id="adminGallery"></div>
       </div>
 
-      <!-- NEW PRESENTATION ORDER TAB -->
+      <!-- PRESENTATION ORDER TAB -->
       <div id="viewOrder" class="admin-view hidden">
         <div class="admin-header">
           <h3>Presentation Order & Standalone</h3>

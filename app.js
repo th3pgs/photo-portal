@@ -66,91 +66,89 @@ const entryGate = document.getElementById("entryGate");
 const entryLoader = document.getElementById("entryLoader");
 const video = document.getElementById("instructionVideo");
 
-// Auto-scroll to the "Already Uploaded" section when it appears on mobile
-setTimeout(() => {
-  if (entryGate && entryGate.style.display !== "none") {
-    const secondaryBox = document.querySelector(".gate-option-box.delay-8");
-    if (secondaryBox) {
-      secondaryBox.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }
-}, 2800); // 2.8 seconds aligns with the CSS animation stagger
-
-document.getElementById("enterSiteBtn").addEventListener("click", () => {
-  const isReturningUser = localStorage.getItem("siteVisited") === "true";
-  localStorage.setItem("siteVisited", "true");
-  
-  entryGate.style.display = "none"; 
-  entryLoader.classList.remove("hidden");
-  
-  if (video.src && video.src !== window.location.href) {
-    isVideoPrepping = true; 
-    const ppBtn = document.getElementById("btnPlayPause");
-    if(ppBtn) ppBtn.style.opacity = "0";
-
-    video.muted = false; video.volume = 1;
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => { video.pause(); video.currentTime = 0; isVideoPrepping = false; if(ppBtn) ppBtn.style.opacity = "1"; })
-      .catch(() => { isVideoPrepping = false; if(ppBtn) ppBtn.style.opacity = "1"; });
-    } else { isVideoPrepping = false; if(ppBtn) ppBtn.style.opacity = "1"; }
-  }
-
-  let hasInitiatedGlide = false;
-  const startSequence = () => {
-    if(hasInitiatedGlide) return;
-    hasInitiatedGlide = true; isIntroGliding = true; 
+const enterBtn = document.getElementById("enterSiteBtn");
+if (enterBtn) {
+  enterBtn.addEventListener("click", () => {
+    const isReturningUser = localStorage.getItem("siteVisited") === "true";
+    localStorage.setItem("siteVisited", "true");
     
-    if (!isReturningUser) { window.scrollTo(0, document.body.scrollHeight); } 
-    else {
-      const vidSec = document.getElementById("videoSection");
-      if(vidSec && vidSec.style.display !== "none") {
-        const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
-        window.scrollTo(0, targetY);
+    entryGate.style.display = "none"; 
+    entryLoader.classList.remove("hidden");
+    
+    if (video && video.src && video.src !== window.location.href) {
+      isVideoPrepping = true; 
+      const ppBtn = document.getElementById("btnPlayPause");
+      if(ppBtn) ppBtn.style.opacity = "0";
+
+      video.muted = false; video.volume = 1;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => { video.pause(); video.currentTime = 0; isVideoPrepping = false; if(ppBtn) ppBtn.style.opacity = "1"; })
+        .catch(() => { isVideoPrepping = false; if(ppBtn) ppBtn.style.opacity = "1"; });
+      } else { isVideoPrepping = false; if(ppBtn) ppBtn.style.opacity = "1"; }
+    }
+
+    let hasInitiatedGlide = false;
+    const startSequence = () => {
+      if(hasInitiatedGlide) return;
+      hasInitiatedGlide = true; isIntroGliding = true; 
+      
+      if (!isReturningUser) { window.scrollTo(0, document.body.scrollHeight); } 
+      else {
+        const vidSec = document.getElementById("videoSection");
+        if(vidSec && vidSec.style.display !== "none") {
+          const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
+          window.scrollTo(0, targetY);
+        }
       }
-    }
-    
-    entryLoader.style.opacity = "0";
-    setTimeout(() => { 
-      entryLoader.classList.add("hidden"); 
-      const playVideoFinal = () => {
-        video.currentTime = 0; isVideoPrepping = false; 
-        if(document.getElementById("btnPlayPause")) document.getElementById("btnPlayPause").style.opacity = "1";
-        video.play().catch(()=>{}); setTimeout(() => { isIntroGliding = false; }, 500);
-      };
+      
+      entryLoader.style.opacity = "0";
+      setTimeout(() => { 
+        entryLoader.classList.add("hidden"); 
+        const playVideoFinal = () => {
+          if (video) { video.currentTime = 0; video.play().catch(()=>{}); }
+          isVideoPrepping = false; 
+          if(document.getElementById("btnPlayPause")) document.getElementById("btnPlayPause").style.opacity = "1";
+          setTimeout(() => { isIntroGliding = false; }, 500);
+        };
 
-      if (!isReturningUser) {
-        smoothScrollToY(0, 2500).then(() => {
-          const vidSec = document.getElementById("videoSection");
-          if(vidSec.style.display !== "none") {
-            const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
-            smoothScrollToY(targetY, 2500).then(playVideoFinal);
-          } else { isIntroGliding = false; }
-        });
-      } else { playVideoFinal(); }
-    }, 400);
-  };
+        if (!isReturningUser) {
+          smoothScrollToY(0, 2500).then(() => {
+            const vidSec = document.getElementById("videoSection");
+            if(vidSec && vidSec.style.display !== "none") {
+              const targetY = vidSec.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (vidSec.offsetHeight / 2);
+              smoothScrollToY(targetY, 2500).then(playVideoFinal);
+            } else { isIntroGliding = false; }
+          });
+        } else { playVideoFinal(); }
+      }, 400);
+    };
 
-  setTimeout(() => {
-    if (video.readyState >= 3 || !video.src || video.src === window.location.href) { startSequence(); } 
-    else { const checkVid = setInterval(() => { if (video.readyState >= 3) { clearInterval(checkVid); startSequence(); } }, 500); setTimeout(() => { clearInterval(checkVid); startSequence(); }, 3000); }
-  }, 3000); 
-});
+    setTimeout(() => {
+      if (video && (video.readyState >= 3 || !video.src || video.src === window.location.href)) { startSequence(); } 
+      else { const checkVid = setInterval(() => { if (video && video.readyState >= 3) { clearInterval(checkVid); startSequence(); } }, 500); setTimeout(() => { clearInterval(checkVid); startSequence(); }, 3000); }
+    }, 3000); 
+  });
+}
 
 const videoContainer = document.getElementById("videoContainer");
-const videoObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (isIntroGliding) return;
-    if (!e.isIntersecting && !video.paused) { videoContainer.classList.add("mini-player"); video.setAttribute("controls", "true"); } 
-    else { videoContainer.classList.remove("mini-player"); video.removeAttribute("controls"); }
-  });
-}, { threshold: 0.1 });
-videoObserver.observe(document.getElementById("videoSection"));
+if (videoContainer) {
+  const videoObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (isIntroGliding) return;
+      if (!e.isIntersecting && video && !video.paused) { videoContainer.classList.add("mini-player"); video.setAttribute("controls", "true"); } 
+      else { videoContainer.classList.remove("mini-player"); if (video) video.removeAttribute("controls"); }
+    });
+  }, { threshold: 0.1 });
+  const vs = document.getElementById("videoSection");
+  if (vs) videoObserver.observe(vs);
+}
 
 const track = document.getElementById("carouselTrack");
 let carTimer;
 
 function updateCarouselDots() {
+  if (!track) return;
   const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)'); if(slides.length <= 1) return;
   const currentIndex = parseInt(track.firstElementChild.dataset.index);
   const dots = document.querySelectorAll('#carouselDots .dot');
@@ -158,6 +156,7 @@ function updateCarouselDots() {
 }
 
 function slideNext() {
+  if (!track) return;
   const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)'); if(slides.length <= 1) return;
   track.style.transition = 'transform 0.4s ease-in-out'; track.style.transform = 'translateX(-100%)';
   setTimeout(() => { track.appendChild(track.firstElementChild); track.style.transition = 'none'; track.style.transform = 'translateX(0)'; updateCarouselDots(); }, 400);
@@ -166,6 +165,7 @@ function slideNext() {
 function startCarousel() { clearInterval(carTimer); carTimer = setInterval(slideNext, 4000); }
 
 function initCarousel() {
+  if (!track) return;
   const slides = track.querySelectorAll('.car-slide-wrapper:not(.hidden-slide)'); const dc = document.getElementById("carouselDots"); dc.innerHTML = "";
   if(slides.length > 1) { slides.forEach((s, i) => { s.dataset.index = i; const d = document.createElement("span"); d.className = "dot"; if(i===0) d.classList.add("active"); dc.appendChild(d); }); startCarousel(); }
 }
@@ -173,18 +173,20 @@ function initCarousel() {
 const ppBtn = document.getElementById("btnPlayPause"); const seek = document.getElementById("seekSlider"); const vol = document.getElementById("volumeSlider");
 const iPlay = document.getElementById("iconPlay"); const iPause = document.getElementById("iconPause");
 
-ppBtn.addEventListener("click", () => {
-  if (video.paused) { video.play(); iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); } 
-  else { video.pause(); iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); }
-});
-video.addEventListener("play", () => { if (isVideoPrepping) return; iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); });
-video.addEventListener("pause", () => { if (isVideoPrepping) return; iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); });
+if (ppBtn && video) {
+  ppBtn.addEventListener("click", () => {
+    if (video.paused) { video.play(); iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); } 
+    else { video.pause(); iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); }
+  });
+  video.addEventListener("play", () => { if (isVideoPrepping) return; iPlay.classList.add("hidden"); iPause.classList.remove("hidden"); });
+  video.addEventListener("pause", () => { if (isVideoPrepping) return; iPause.classList.add("hidden"); iPlay.classList.remove("hidden"); });
 
-document.getElementById("btnBack5").addEventListener("click", () => video.currentTime -= 5);
-document.getElementById("btnFwd5").addEventListener("click", () => video.currentTime += 5);
-video.addEventListener("timeupdate", () => seek.value = (100 / video.duration) * video.currentTime || 0);
-seek.addEventListener("input", () => video.currentTime = video.duration * (seek.value / 100));
-vol.addEventListener("input", () => video.volume = vol.value);
+  document.getElementById("btnBack5").addEventListener("click", () => video.currentTime -= 5);
+  document.getElementById("btnFwd5").addEventListener("click", () => video.currentTime += 5);
+  video.addEventListener("timeupdate", () => seek.value = (100 / video.duration) * video.currentTime || 0);
+  seek.addEventListener("input", () => video.currentTime = video.duration * (seek.value / 100));
+  vol.addEventListener("input", () => video.volume = vol.value);
+}
 
 window.copyToolLink = (num) => {
   const link = document.getElementById(`toolLink${num}`).href;
@@ -197,25 +199,34 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
     const d = snap.data();
     if (d.deadline) { deadlineDate = new Date(d.deadline); startDigitalCountdown(); }
     
-    if (d.preview1 || d.preview2) {
-      document.getElementById("previewSection").style.display = "block";
-      const w1 = document.getElementById("ref1Wrap"); const w2 = document.getElementById("ref2Wrap");
-      if (d.preview1) { document.getElementById("ref1").src = d.preview1; w1.classList.remove("hidden-slide"); } else { w1.classList.add("hidden-slide"); }
-      if (d.preview2) { document.getElementById("ref2").src = d.preview2; w2.classList.remove("hidden-slide"); } else { w2.classList.add("hidden-slide"); }
-      initCarousel();
-    } else { document.getElementById("previewSection").style.display = "none"; }
+    const pSec = document.getElementById("previewSection");
+    if (pSec) {
+        if (d.preview1 || d.preview2) {
+          pSec.style.display = "block";
+          const w1 = document.getElementById("ref1Wrap"); const w2 = document.getElementById("ref2Wrap");
+          if (d.preview1) { document.getElementById("ref1").src = d.preview1; w1.classList.remove("hidden-slide"); } else { w1.classList.add("hidden-slide"); }
+          if (d.preview2) { document.getElementById("ref2").src = d.preview2; w2.classList.remove("hidden-slide"); } else { w2.classList.add("hidden-slide"); }
+          initCarousel();
+        } else { pSec.style.display = "none"; }
+    }
     
-    if (d.videoUrl) { document.getElementById("videoSection").style.display = "block"; video.src = d.videoUrl; } else { document.getElementById("videoSection").style.display = "none"; }
+    const vSec = document.getElementById("videoSection");
+    if (vSec && video) {
+        if (d.videoUrl) { vSec.style.display = "block"; video.src = d.videoUrl; } else { vSec.style.display = "none"; }
+    }
 
-    if (d.tool1Title || d.tool2Title || d.tool3Title) {
-      document.getElementById("toolsSection").style.display = "block";
-      for (let i = 1; i <= 3; i++) {
-        const title = d[`tool${i}Title`]; const url = d[`tool${i}Url`]; const img = d[`tool${i}Img`];
-        if (title) { document.getElementById(`toolTitle${i}`).innerText = title; document.getElementById(`adminTool${i}Title`).value = title; }
-        if (url) { document.getElementById(`toolLink${i}`).href = url; document.getElementById(`adminTool${i}Url`).value = url; }
-        if (img) { document.getElementById(`toolImg${i}`).src = img; }
-      }
-    } else { document.getElementById("toolsSection").style.display = "none"; }
+    const tSec = document.getElementById("toolsSection");
+    if (tSec) {
+        if (d.tool1Title || d.tool2Title || d.tool3Title) {
+          tSec.style.display = "block";
+          for (let i = 1; i <= 3; i++) {
+            const title = d[`tool${i}Title`]; const url = d[`tool${i}Url`]; const img = d[`tool${i}Img`];
+            if (title) { document.getElementById(`toolTitle${i}`).innerText = title; document.getElementById(`adminTool${i}Title`).value = title; }
+            if (url) { document.getElementById(`toolLink${i}`).href = url; document.getElementById(`adminTool${i}Url`).value = url; }
+            if (img) { document.getElementById(`toolImg${i}`).src = img; }
+          }
+        } else { tSec.style.display = "none"; }
+    }
   }
 });
 
@@ -231,8 +242,11 @@ function startDigitalCountdown() {
     const m = Math.floor((abs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, "0");
     const s = Math.floor((abs % (1000 * 60)) / 1000).toString().padStart(2, "0");
 
-    document.getElementById("countdown").innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
-    document.getElementById("timerStatusText").innerText = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
+    const cd = document.getElementById("countdown");
+    if (cd) {
+        cd.innerText = `${diff < 0 ? "-" : ""}${h}:${m}:${s}`;
+        document.getElementById("timerStatusText").innerText = diff < 0 ? "DEADLINE PASSED" : "Time remaining";
+    }
 
     document.querySelectorAll('.time-updater').forEach(el => { if(el.dataset.time) el.innerText = timeAgo(new Date(parseInt(el.dataset.time))); });
   }, 1000);
@@ -242,20 +256,32 @@ let myId = localStorage.getItem("mySubId") || doc(collection(db, "submissions"))
 let uploadTime = localStorage.getItem("mySubTime") || 0;
 const tickIcon = `<svg class="icon-svg svg-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
+let hasAnimatedLeaderboard = false;
+
 onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) => {
   const orgList = document.getElementById("organizerList"); const regList = document.getElementById("rosterList"); const gallery = document.getElementById("adminGallery");
-  orgList.innerHTML = ""; regList.innerHTML = ""; gallery.innerHTML = "";
-  let counter = 0;
-  let rank = 1;
+  if(orgList) orgList.innerHTML = ""; 
+  if(regList) regList.innerHTML = ""; 
+  if(gallery) gallery.innerHTML = "";
+  
+  let counter = 0; let rank = 1;
+
+  // New Landing Leaderboard Extraction
+  const landingLb = document.getElementById("landingLeaderboard");
+  if(landingLb) landingLb.innerHTML = "";
+  let t0 = 0;
+  let sortedSubs = [];
 
   snap.forEach((docSnap) => {
     const d = docSnap.data(); const id = docSnap.id; const now = Date.now();
+    sortedSubs.push({ id, ...d });
+
     const editTime = d.editTimestamp || 0; const isTimeout = d.isEditing && (now - editTime > 300000); 
 
     if (isTimeout && id === myId && d.isEditing) { setDoc(doc(db, "submissions", myId), { isEditing: false }, { merge: true }); localStorage.removeItem("isEditingLocal"); d.isEditing = false; }
     
-    // Skip standalone posts in the main user roster
-    if(!d.isStandalone) {
+    // Legacy Roster
+    if(!d.isStandalone && orgList && regList) {
         counter++;
         const canEdit = (id === myId && (now - uploadTime) < 300000); 
         const editBtn = canEdit ? `<button class="btn-edit-user" onclick="triggerUserEdit('${d.firstName}','${d.lastName}','${d.role}')">Edit</button>` : "";
@@ -281,52 +307,113 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
     }
 
     // Populate Admin Gallery (Includes Standalones)
-    let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`; let dlBtn = ''; let beforeUploadBtn = '';
-    
-    if (d.imageUrl) {
-      if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov") || d.imageUrl.includes("/video/")) {
-        imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
-      } else { imgHtml = `<img src="${d.imageUrl}">`; }
-      dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
-    } else if (d.isStandalone && d.finalImageUrl) {
-      imgHtml = `<img src="${d.finalImageUrl}">`;
-      dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.finalImageUrl}', '_blank')">Download Final</button>`;
-    } else {
-      beforeUploadBtn = `<button class="btn-admin-action" style="flex:1; background:#3b82f6; color:white; border:none;" onclick="triggerBeforeUpload('${id}')">Upload Before</button>`;
-    }
-    
-    const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
-    const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
+    if (gallery) {
+        let imgHtml = `<div class="no-img-placeholder">Manual Entry</div>`; let dlBtn = ''; let beforeUploadBtn = '';
+        
+        if (d.imageUrl) {
+          if (d.imageUrl.includes(".mp4") || d.imageUrl.includes(".mov") || d.imageUrl.includes("/video/")) {
+            imgHtml = `<video src="${d.imageUrl}" style="width:100%; height:220px; object-fit:cover; background:#000;" controls></video>`;
+          } else { imgHtml = `<img src="${d.imageUrl}">`; }
+          dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.imageUrl}', '_blank')">Download File</button>`;
+        } else if (d.isStandalone && d.finalImageUrl) {
+          imgHtml = `<img src="${d.finalImageUrl}">`;
+          dlBtn = `<button class="btn-admin-action green-btn" style="flex:1" onclick="window.open('${d.finalImageUrl}', '_blank')">Download Final</button>`;
+        } else {
+          beforeUploadBtn = `<button class="btn-admin-action" style="flex:1; background:#3b82f6; color:white; border:none;" onclick="triggerBeforeUpload('${id}')">Upload Before</button>`;
+        }
+        
+        const editingClass = (d.isEditing && !isTimeout) ? "is-editing-admin" : "";
+        const editingBadge = (d.isEditing && !isTimeout) ? `<div class="is-editing-badge">User editing...</div>` : "";
 
-    let finalUploadBtn = "";
-    if (d.isStandalone) {
-      finalUploadBtn = `<span class="editing-text" style="color: #2563eb; width: 100%; text-align: center; margin-bottom: 5px;">Standalone Post</span>`;
-    } else {
-      finalUploadBtn = !d.finalImageUrl 
-        ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
-        : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
-           <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
-    }
+        let finalUploadBtn = "";
+        if (d.isStandalone) {
+          finalUploadBtn = `<span class="editing-text" style="color: #2563eb; width: 100%; text-align: center; margin-bottom: 5px;">Standalone Post</span>`;
+        } else {
+          finalUploadBtn = !d.finalImageUrl 
+            ? `<button class="btn-admin-action" style="flex:1; background:#facc15; border:none;" onclick="triggerFinalUpload('${id}')">Upload Final</button>`
+            : `<button class="btn-admin-action" style="flex:1; background:#fef08a; border:none;" onclick="triggerFinalUpload('${id}')">Replace Final</button>
+               <button class="btn-admin-danger" style="flex:1;" onclick="removeFinalImage('${id}')">Remove Final</button>`;
+        }
 
-    gallery.innerHTML += `
-      <div class="gallery-card ${editingClass}" id="gal-${id}">
-        ${editingBadge} ${imgHtml}
-        <div class="gallery-info">
-          <h4>${d.firstName} ${d.lastName || ''}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role || 'No Role'}</p>
-          <div style="display:flex; gap:8px; margin-bottom: 10px;">
-            <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName || ''} - ${d.role || ''}'); showToast('Copied!')">Copy Info</button>
-            ${dlBtn} ${beforeUploadBtn}
-          </div>
-          <div style="display:flex; gap:8px; margin-bottom: 10px;">${finalUploadBtn}</div>
-          <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
-          <div class="del-req-box hidden" id="delbox-${id}">
-            <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
-            <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
-          </div>
-        </div>
-      </div>`;
+        gallery.innerHTML += `
+          <div class="gallery-card ${editingClass}" id="gal-${id}">
+            ${editingBadge} ${imgHtml}
+            <div class="gallery-info">
+              <h4>${d.firstName} ${d.lastName || ''}</h4><p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">${d.role || 'No Role'}</p>
+              <div style="display:flex; gap:8px; margin-bottom: 10px;">
+                <button class="btn-admin-action" style="flex:1" onclick="navigator.clipboard.writeText('${d.firstName} ${d.lastName || ''} - ${d.role || ''}'); showToast('Copied!')">Copy Info</button>
+                ${dlBtn} ${beforeUploadBtn}
+              </div>
+              <div style="display:flex; gap:8px; margin-bottom: 10px;">${finalUploadBtn}</div>
+              <button class="btn-danger" onclick="showDeleteConfirm('${id}')">Delete Entry</button>
+              <div class="del-req-box hidden" id="delbox-${id}">
+                <input type="text" id="delinput-${id}" class="del-input" placeholder="Type 'delete'" autocomplete="off">
+                <button class="btn-confirm-del" onclick="executeDelete('${id}')">Confirm</button>
+              </div>
+            </div>
+          </div>`;
+    }
   });
-  document.getElementById("rosterCounter").textContent = `${counter} Uploads`;
+
+  const rc = document.getElementById("rosterCounter");
+  if (rc) rc.textContent = `${counter} Uploads`;
+
+  // Process & render the new Landing Leaderboard
+  if(landingLb) {
+      const nonOrg = sortedSubs.filter(s => !s.isOrganizer && s.time);
+      if (nonOrg.length > 0) t0 = nonOrg[0].time.toMillis();
+
+      let lbRank = 1;
+      sortedSubs.forEach((d) => {
+          if (d.isStandalone) return; 
+          
+          let timeText = "";
+          if (d.isOrganizer) {
+              timeText = "Before deadline";
+          } else {
+              let tsMillis = d.time ? d.time.toMillis() : Date.now();
+              let diff = tsMillis - t0;
+              if (diff <= 60000) { 
+                  timeText = "At launch";
+              } else {
+                  let mins = Math.floor(diff / 60000);
+                  let hrs = Math.floor(mins / 60);
+                  if (hrs > 0) {
+                      timeText = `In ${hrs} hr${hrs > 1 ? 's' : ''}`;
+                  } else {
+                      timeText = `In ${mins} min${mins > 1 ? 's' : ''}`;
+                  }
+              }
+          }
+
+          const row = `
+            <div class="chess-row" style="padding: 12px 15px; gap: 10px;">
+              <div class="chess-rank" style="font-size: 0.95rem;">${lbRank++}</div>
+              <div class="chess-details">
+                <span class="chess-name" style="font-size: 0.95rem;">${d.firstName} <span style="font-weight:400;">${d.lastName || ''}</span></span>
+              </div>
+              <div class="chess-status">
+                <span class="chess-time" style="font-size: 0.8rem; font-weight: bold; color: var(--accent-blue);">${timeText}</span>
+              </div>
+            </div>`;
+          landingLb.innerHTML += row;
+      });
+
+      // Initial Scroll Animation Trigger (Leaderboard scrolls up, then whole page scrolls down)
+      if (!hasAnimatedLeaderboard && sortedSubs.length > 0) {
+          hasAnimatedLeaderboard = true;
+          setTimeout(() => {
+              landingLb.scrollTop = landingLb.scrollHeight; 
+              setTimeout(() => {
+                  landingLb.scrollTo({ top: 0, behavior: 'smooth' }); 
+                  setTimeout(() => {
+                      const welcome = document.getElementById("welcomeBox");
+                      if (welcome) welcome.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 1500); 
+              }, 600); 
+          }, 300); 
+      }
+  }
 });
 
 window.triggerFinalUpload = async (subId) => {
@@ -374,76 +461,86 @@ window.triggerUserEdit = async (f, l, r) => {
 };
 
 let selectedFile = null; const fileInput = document.getElementById("fileInput");
-fileInput.addEventListener("change", (e) => {
-  if (e.target.files[0]) {
-    selectedFile = e.target.files[0];
-    document.getElementById("dropzoneContent").innerHTML = `
-      <svg class="icon-svg" style="width:40px;height:40px;color:#10b981;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      <h3 style="color:#10b981;">${selectedFile.name}</h3><small>Ready for review</small>`;
-  }
-});
-
-document.getElementById("reviewBtn").addEventListener("click", async () => {
-  const f = document.getElementById("firstName").value.trim(); const l = document.getElementById("lastName").value.trim(); const r = document.getElementById("role").value.trim();
-  const isEditing = localStorage.getItem("isEditingLocal") === "true";
-
-  if (!f || !l || !r) { showToast("Please fill all fields."); return; }
-  if (!selectedFile && !isEditing) { showToast("Please select a picture."); return; }
-
-  if (isEditing && !selectedFile) {
-    document.getElementById("uploadOverlay").classList.remove("hidden"); document.getElementById("overlayText").innerText = "Saving Edits...";
-    await setDoc(doc(db, "submissions", myId), { firstName: f, lastName: l, role: r, isEditing: false }, { merge: true });
-    localStorage.removeItem("isEditingLocal");
-    const revBtn = document.getElementById("reviewBtn"); revBtn.innerText = "Review Submission"; revBtn.classList.remove("shake-constant");
-    document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
-    showToast("Edits Saved!", true); return;
-  }
-
-  document.getElementById("uploadForm").classList.add("hidden"); document.getElementById("reviewContainer").classList.remove("hidden");
-  document.getElementById("reviewName").innerHTML = `${f} <span style="font-weight:400; font-size:0.9em;">${l}</span>`; document.getElementById("reviewRole").innerText = r;
-  if (selectedFile) {
-    if (selectedFile.type.includes("video")) { document.getElementById("reviewImage").style.display = "none"; } 
-    else { document.getElementById("reviewImage").style.display = "block"; document.getElementById("reviewImage").src = URL.createObjectURL(selectedFile); }
-  }
-});
-
-document.getElementById("cancelReviewBtn").addEventListener("click", () => { document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("reviewContainer").classList.add("hidden"); });
-
-document.getElementById("confirmSubmitBtn").addEventListener("click", () => {
-  document.getElementById("uploadOverlay").classList.remove("hidden");
-  const fd = new FormData(); fd.append("file", selectedFile); fd.append("upload_preset", CLOUDINARY_PRESET);
-  const xhr = new XMLHttpRequest(); xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
-  
-  xhr.upload.onprogress = (e) => {
-    if (e.lengthComputable) {
-      const p = Math.round((e.loaded / e.total) * 100);
-      document.getElementById("progressBar").style.width = p + "%"; document.getElementById("progressPercent").textContent = p + "%";
-      if (p === 100) document.getElementById("overlayText").innerText = "Securing Assets...";
+if (fileInput) {
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files[0]) {
+      selectedFile = e.target.files[0];
+      document.getElementById("dropzoneContent").innerHTML = `
+        <svg class="icon-svg" style="width:40px;height:40px;color:#10b981;" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <h3 style="color:#10b981;">${selectedFile.name}</h3><small>Ready for review</small>`;
     }
-  };
-  xhr.onload = async () => {
-    if (xhr.status === 200) {
-      const resp = JSON.parse(xhr.responseText); let finalUrl = resp.secure_url;
-      if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,q_auto/");
-      const isEditing = localStorage.getItem("isEditingLocal") === "true";
-      const payload = { firstName: document.getElementById("firstName").value, lastName: document.getElementById("lastName").value, role: document.getElementById("role").value, imageUrl: finalUrl, isOrganizer: false, isEditing: false };
-      
-      if (!isEditing) payload.time = serverTimestamp();
-      await setDoc(doc(db, "submissions", myId), payload, { merge: true });
-      if (!isEditing) { uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime); }
-      
+  });
+}
+
+const reviewBtn = document.getElementById("reviewBtn");
+if (reviewBtn) {
+  reviewBtn.addEventListener("click", async () => {
+    const f = document.getElementById("firstName").value.trim(); const l = document.getElementById("lastName").value.trim(); const r = document.getElementById("role").value.trim();
+    const isEditing = localStorage.getItem("isEditingLocal") === "true";
+
+    if (!f || !l || !r) { showToast("Please fill all fields."); return; }
+    if (!selectedFile && !isEditing) { showToast("Please select a picture."); return; }
+
+    if (isEditing && !selectedFile) {
+      document.getElementById("uploadOverlay").classList.remove("hidden"); document.getElementById("overlayText").innerText = "Saving Edits...";
+      await setDoc(doc(db, "submissions", myId), { firstName: f, lastName: l, role: r, isEditing: false }, { merge: true });
       localStorage.removeItem("isEditingLocal");
       const revBtn = document.getElementById("reviewBtn"); revBtn.innerText = "Review Submission"; revBtn.classList.remove("shake-constant");
-      document.getElementById("dropzoneContent").innerHTML = ` <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg> <h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
-      
-      document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("reviewContainer").classList.add("hidden"); document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
-      showToast(isEditing ? "Update Recorded!" : "Submission Recorded!", true);
-    } else { showToast("Upload failed."); document.getElementById("uploadOverlay").classList.add("hidden"); }
-  };
-  xhr.send(fd);
-});
+      document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
+      showToast("Edits Saved!", true); return;
+    }
 
-document.getElementById("resetBtn").addEventListener("click", () => { triggerUserEdit(document.getElementById("firstName").value, document.getElementById("lastName").value, document.getElementById("role").value); });
+    document.getElementById("uploadForm").classList.add("hidden"); document.getElementById("reviewContainer").classList.remove("hidden");
+    document.getElementById("reviewName").innerHTML = `${f} <span style="font-weight:400; font-size:0.9em;">${l}</span>`; document.getElementById("reviewRole").innerText = r;
+    if (selectedFile) {
+      if (selectedFile.type.includes("video")) { document.getElementById("reviewImage").style.display = "none"; } 
+      else { document.getElementById("reviewImage").style.display = "block"; document.getElementById("reviewImage").src = URL.createObjectURL(selectedFile); }
+    }
+  });
+}
+
+const cancelRevBtn = document.getElementById("cancelReviewBtn");
+if (cancelRevBtn) cancelRevBtn.addEventListener("click", () => { document.getElementById("uploadForm").classList.remove("hidden"); document.getElementById("reviewContainer").classList.add("hidden"); });
+
+const confirmSubBtn = document.getElementById("confirmSubmitBtn");
+if (confirmSubBtn) {
+  confirmSubBtn.addEventListener("click", () => {
+    document.getElementById("uploadOverlay").classList.remove("hidden");
+    const fd = new FormData(); fd.append("file", selectedFile); fd.append("upload_preset", CLOUDINARY_PRESET);
+    const xhr = new XMLHttpRequest(); xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`);
+    
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const p = Math.round((e.loaded / e.total) * 100);
+        document.getElementById("progressBar").style.width = p + "%"; document.getElementById("progressPercent").textContent = p + "%";
+        if (p === 100) document.getElementById("overlayText").innerText = "Securing Assets...";
+      }
+    };
+    xhr.onload = async () => {
+      if (xhr.status === 200) {
+        const resp = JSON.parse(xhr.responseText); let finalUrl = resp.secure_url;
+        if (resp.resource_type === "video") finalUrl = finalUrl.replace("/upload/", "/upload/f_mp4,q_auto/");
+        const isEditing = localStorage.getItem("isEditingLocal") === "true";
+        const payload = { firstName: document.getElementById("firstName").value, lastName: document.getElementById("lastName").value, role: document.getElementById("role").value, imageUrl: finalUrl, isOrganizer: false, isEditing: false };
+        
+        if (!isEditing) payload.time = serverTimestamp();
+        await setDoc(doc(db, "submissions", myId), payload, { merge: true });
+        if (!isEditing) { uploadTime = Date.now(); localStorage.setItem("mySubId", myId); localStorage.setItem("mySubTime", uploadTime); }
+        
+        localStorage.removeItem("isEditingLocal");
+        const revBtn = document.getElementById("reviewBtn"); revBtn.innerText = "Review Submission"; revBtn.classList.remove("shake-constant");
+        document.getElementById("dropzoneContent").innerHTML = ` <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg> <h3>Choose High-Quality Picture</h3><small>Click to browse files</small>`;
+        
+        document.getElementById("uploadOverlay").classList.add("hidden"); document.getElementById("reviewContainer").classList.add("hidden"); document.getElementById("formCard").classList.add("hidden"); document.getElementById("successCard").classList.remove("hidden");
+        showToast(isEditing ? "Update Recorded!" : "Submission Recorded!", true);
+      } else { showToast("Upload failed."); document.getElementById("uploadOverlay").classList.add("hidden"); }
+    };
+    xhr.send(fd);
+  });
+}
+
+const resBtn = document.getElementById("resetBtn");
+if (resBtn) resBtn.addEventListener("click", () => { triggerUserEdit(document.getElementById("firstName").value, document.getElementById("lastName").value, document.getElementById("role").value); });
 
 let taps = 0, lastTap = 0;
 document.getElementById("secretTrigger").addEventListener("click", () => {
@@ -633,7 +730,7 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   });
 
   finalizedSubmissions = tempSubs;
-  resultsLoaded = true;
+  resultsLoaded = true; // Mark as loaded safely
 
   if (document.getElementById("viewOrder") && !document.getElementById("viewOrder").classList.contains("hidden")) {
      renderDraggableList();
@@ -641,32 +738,38 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 });
 
 seeResultsBtn.addEventListener("click", () => {
-  if (!resultsLoaded) {
-    showToast("Fetching designs from server, please wait a moment...");
-    return;
-  }
-
-  if (finalizedSubmissions.length === 0) {
-    showToast("No finalized results available yet.");
-    return;
-  }
-  
+  // If not loaded, we still transition to the loader overlay seamlessly, instead of showing a toast
   document.getElementById("entryGate").style.display = "none";
   entryLoader.classList.remove("hidden");
   
-  setTimeout(() => {
-    entryLoader.classList.add("hidden");
-    resultsModal.classList.remove("hidden");
-    buildResultsCarousel();
+  // Continuously check until results are ready from Firebase
+  const checkAndLoad = setInterval(() => {
+    if (resultsLoaded) {
+      clearInterval(checkAndLoad);
+      
+      if (finalizedSubmissions.length === 0) {
+        entryLoader.classList.add("hidden");
+        document.getElementById("entryGate").style.display = "block"; 
+        showToast("No finalized results available yet.");
+        return;
+      }
+      
+      // We are good to go, transition into the carousel
+      setTimeout(() => {
+        entryLoader.classList.add("hidden");
+        resultsModal.classList.remove("hidden");
+        buildResultsCarousel();
 
-    if (!localStorage.getItem("shortsOnboardingV16")) {
-      onboardingTimer = setTimeout(() => {
         if (!localStorage.getItem("shortsOnboardingV16")) {
-          document.getElementById("scrollOnboarding").classList.remove("hidden");
+          onboardingTimer = setTimeout(() => {
+            if (!localStorage.getItem("shortsOnboardingV16")) {
+              document.getElementById("scrollOnboarding").classList.remove("hidden");
+            }
+          }, 2000);
         }
-      }, 2000);
+      }, 400); // Small UI buffer
     }
-  }, 400); // Reduced loading delay
+  }, 100); 
 });
 
 let scrollDebounce;
@@ -704,7 +807,7 @@ resultsViewport.addEventListener("scroll", () => {
 
 document.getElementById("closeResultsBtn").addEventListener("click", () => {
   resultsModal.classList.add("hidden");
-  document.getElementById("entryGate").style.display = "flex";
+  document.getElementById("entryGate").style.display = "block"; // Changed to block for new layout
   clearTimeout(onboardingTimer);
   if (activeUnsubComments) activeUnsubComments();
   if (activeLikesUnsub) activeLikesUnsub();
@@ -738,7 +841,6 @@ function buildResultsCarousel() {
     slidesToBuild = [...finalizedSubmissions];
   }
 
-  // Load liked posts from memory for the UI initialization
   const likedPosts = JSON.parse(localStorage.getItem("site_liked_posts") || "[]");
 
   slidesToBuild.forEach((sub, idx) => {
@@ -837,10 +939,8 @@ function buildResultsCarousel() {
     });
   });
 
-  // Re-engineered Like Logic with LocalStorage Caching
   document.querySelectorAll('.like-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      // Prevent clicking if they've already liked it
       if(e.currentTarget.dataset.liked === "true") return; 
       
       e.currentTarget.dataset.liked = "true";
@@ -851,7 +951,6 @@ function buildResultsCarousel() {
       svg.style.animation = "attentionShake 0.4s ease";
       setTimeout(() => svg.style.animation = "", 400);
 
-      // Save memory of the like to LocalStorage so it persists on reload
       let localLikes = JSON.parse(localStorage.getItem("site_liked_posts") || "[]");
       if (!localLikes.includes(subId)) {
           localLikes.push(subId);

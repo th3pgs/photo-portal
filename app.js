@@ -28,6 +28,7 @@ let isVideoPrepping = false;
 
 onAuthStateChanged(auth, (user) => { if (user && user.email === ADMIN_EMAIL) cachedAdmin = true; });
 
+// Legacy background window scroll function
 function smoothScrollToY(endY, duration) {
   const startY = window.scrollY || window.pageYOffset;
   const distance = endY - startY;
@@ -44,6 +45,7 @@ function smoothScrollToY(endY, duration) {
   });
 }
 
+// Leaderboard linear climb function
 function linearScrollToTop(element, duration) {
   const start = element.scrollTop;
   const startTime = performance.now();
@@ -427,16 +429,32 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
         const scrollDuration = 1600; // 1.6 seconds pan upwards
         const intervalTime = scrollDuration / totalItems; // Stagger matches scroll speed perfectly
 
-        // Linear scroll back to top
+        // Linear scroll back to top of the leaderboard container
         linearScrollToTop(landingLb, scrollDuration).then(() => {
           const welcome = document.getElementById("welcomeBox");
-          if (welcome) {
+          const eg = document.getElementById("entryGate");
+          if (welcome && eg) {
             welcome.classList.add("wb-show");
             setTimeout(() => {
               const btn = document.getElementById("seeResultsBtn");
               if (btn) {
-                const targetY = btn.getBoundingClientRect().top + window.scrollY - (window.innerHeight / 2) + (btn.offsetHeight / 2);
-                smoothScrollToY(targetY, 600); // Auto-center the green button perfectly
+                // Smooth scroll the specific overlay container to perfectly center the Green Button
+                const rect = btn.getBoundingClientRect();
+                const targetY = rect.top + eg.scrollTop - (window.innerHeight / 2) + (rect.height / 2);
+                
+                const startY = eg.scrollTop;
+                const distance = targetY - startY;
+                const startTime = performance.now();
+                const dur = 600;
+                
+                function step(time) {
+                  let progress = (time - startTime) / dur;
+                  if (progress > 1) progress = 1;
+                  const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                  eg.scrollTop = startY + distance * ease;
+                  if (progress < 1) requestAnimationFrame(step);
+                }
+                requestAnimationFrame(step);
               }
             }, 150);
           }

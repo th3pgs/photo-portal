@@ -44,6 +44,26 @@ function smoothScrollToY(endY, duration) {
   });
 }
 
+function slowScrollToTop(element, duration) {
+  const start = element.scrollTop;
+  const startTime = performance.now();
+  
+  return new Promise(resolve => {
+      function step(time) {
+          let progress = (time - startTime) / duration;
+          if (progress > 1) progress = 1;
+          
+          const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          
+          element.scrollTop = start * (1 - ease);
+          
+          if (progress < 1) requestAnimationFrame(step);
+          else resolve();
+      }
+      requestAnimationFrame(step);
+  });
+}
+
 function showToast(msg, scrollToForm = false) {
   const c = document.getElementById("toastContainer");
   const t = document.createElement("div"); t.className = "glass-toast"; 
@@ -267,6 +287,9 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   let counter = 0; let rank = 1;
 
   const landingLb = document.getElementById("landingLeaderboard");
+  const lbWrapper = document.getElementById("lbWrapper");
+  const lbTitle = document.getElementById("lbTitle");
+  
   if(landingLb) landingLb.innerHTML = "";
   let t0 = 0;
   let sortedSubs = [];
@@ -356,7 +379,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   if (rc) rc.textContent = `${counter} Uploads`;
 
   if(landingLb) {
-      // 1. Cap to top 13 entries
       const lbSubs = sortedSubs.filter(d => !d.isStandalone).slice(0, 13);
       
       const nonOrg = lbSubs.filter(s => !s.isOrganizer && s.time);
@@ -370,7 +392,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 
       lbSubs.forEach((d) => {
           let timeText = "";
-          // Override Rank 3
           if (lbRank === 3) {
               timeText = "In 43 mins";
           } else if (d.isOrganizer) {
@@ -407,28 +428,41 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
 
       // Sequential Reveal Apple-Style
       if (isInitialLoad && lbSubs.length > 0) {
-          const rows = landingLb.querySelectorAll('.chess-row');
-          let delay = 0;
-          
-          // Loop bottom to top (13 to 1)
-          for (let i = rows.length - 1; i >= 0; i--) {
-              setTimeout(() => {
-                  rows[i].classList.remove('lb-row-hidden');
-                  rows[i].classList.add('lb-row-visible');
-              }, delay);
-              delay += 100; 
-          }
+          if(lbWrapper) lbWrapper.classList.add("lb-wrapper-show");
+          if(lbTitle) lbTitle.classList.add("cinematic-title-show");
 
-          // Trigger Welcome Box Reveal & Scroll Down
           setTimeout(() => {
-              const welcome = document.getElementById("welcomeBox");
-              if (welcome) {
-                  welcome.classList.add("wb-show");
+              landingLb.scrollTop = landingLb.scrollHeight; 
+
+              const rows = landingLb.querySelectorAll('.chess-row');
+              let delay = 0;
+              
+              // Fade in from bottom to top
+              for (let i = rows.length - 1; i >= 0; i--) {
                   setTimeout(() => {
-                      welcome.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                  }, 100);
+                      rows[i].classList.remove('lb-row-hidden');
+                      rows[i].classList.add('lb-row-visible');
+                  }, delay);
+                  delay += 120; 
               }
-          }, delay + 400); 
+
+              // Majestic Slow Scroll Up
+              setTimeout(() => {
+                  slowScrollToTop(landingLb, 2800).then(() => {
+                      // Trigger Welcome Box Reveal & Center Screen
+                      setTimeout(() => {
+                          const welcome = document.getElementById("welcomeBox");
+                          if (welcome) {
+                              welcome.classList.add("wb-show");
+                              setTimeout(() => {
+                                  welcome.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }, 300);
+                          }
+                      }, 200);
+                  });
+              }, delay + 400); 
+
+          }, 800); // Give title time to blur in
       }
   }
 });
@@ -742,7 +776,6 @@ onSnapshot(query(collection(db, "submissions"), orderBy("time", "asc")), (snap) 
   finalizedSubmissions = tempSubs;
   resultsLoaded = true;
 
-  // Background Image Caching
   finalizedSubmissions.forEach(sub => {
     if (sub.finalImageUrl) { const img = new Image(); img.src = sub.finalImageUrl; }
     if (sub.imageUrl) { const img2 = new Image(); img2.src = sub.imageUrl; }
@@ -757,7 +790,6 @@ seeResultsBtn.addEventListener("click", () => {
   document.getElementById("entryGate").style.display = "none";
   entryLoader.classList.remove("hidden");
   
-  // 5 SECOND CONTROLLED LOAD - Guaranteed Pre-Caching Time
   setTimeout(() => {
     if (!resultsLoaded || finalizedSubmissions.length === 0) {
       entryLoader.classList.add("hidden");
